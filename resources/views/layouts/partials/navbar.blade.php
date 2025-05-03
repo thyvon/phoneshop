@@ -31,15 +31,6 @@
         </a>
     </div>
 
-    <div class="search">
-        <form class="app-forms hidden-xs-down" role="search" action="#" autocomplete="off">
-            <input type="text" id="search-field" placeholder="Search for anything" class="form-control" tabindex="1">
-            <a href="#" class="btn-danger btn-search-close js-waves-off d-none" data-action="toggle" data-class="mobile-search-on">
-                <i class="fal fa-times"></i>
-            </a>
-        </form>
-    </div>
-
     <div class="ml-auto d-flex">
         <div class="hidden-sm-up">
             <a href="#" class="header-icon" data-action="toggle" data-class="mobile-search-on" data-focus="search-field" title="Search">
