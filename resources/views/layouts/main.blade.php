@@ -5,29 +5,30 @@
     <title>{{ $header ?? 'Page' }} | {{ config('app.name', 'Laravel') }}</title>
     <meta name="description" content="Page Title">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, minimal-ui">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, minimal-ui">
 
-    <!-- iOS & mobile optimizations -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- Mobile Optimizations -->
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="msapplication-tap-highlight" content="no">
     <meta name="mobile-web-app-capable" content="yes">
 
     <!-- Base CSS -->
-    <link id="vendorsbundle" rel="stylesheet" media="screen, print" href="{{ asset('template/css/vendors.bundle.css') }}">
-    <link id="appbundle" rel="stylesheet" media="screen, print" href="{{ asset('template/css/app.bundle.css') }}">
-    <link id="mytheme" rel="stylesheet" media="screen, print" href="#">
-    <link id="myskin" rel="stylesheet" media="screen, print" href="{{ asset('template/css/skins/skin-master.css') }}">
+    <link id="vendorsbundle" rel="stylesheet" href="{{ asset('template/css/vendors.bundle.css') }}">
+    <link id="appbundle" rel="stylesheet" href="{{ asset('template/css/app.bundle.css') }}">
+    <link id="myskin" rel="stylesheet" href="{{ asset('template/css/skins/skin-master.css') }}">
+    <link id="mytheme" rel="stylesheet" href="#">
 
-    <!-- DataTables (SmartAdmin) -->
-    <!-- <link rel="stylesheet" media="screen, print" href="{{ asset('template/css/datagrid/datatables/datatables.bundle.css') }}"> -->
+    <!-- Page-specific Vite (for Vue) -->
+    @stack('vite')
+
+    <!-- Page-specific styles (e.g. datatables) -->
+    @stack('styles')
 
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('template/img/favicon/apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('template/img/favicon/favicon-32x32.png') }}">
     <link rel="mask-icon" href="{{ asset('template/img/favicon/safari-pinned-tab.svg') }}" color="#5bbad5">
-
-    <!-- Page-specific styles -->
-    @stack('styles')
 </head>
 
 <body class="mod-bg-1">
@@ -76,7 +77,9 @@
                 @include('layouts.partials.navbar')
 
                 <main id="js-page-content" role="main" class="page-content">
-                    @yield('content')
+                    <div id="app">
+                        @yield('content')
+                    </div>
                 </main>
 
                 <div class="page-content-overlay" data-action="toggle" data-class="mobile-nav-on"></div>

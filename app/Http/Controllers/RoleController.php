@@ -6,6 +6,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Yajra\DataTables\DataTables;
 
 class RoleController extends Controller
 {
@@ -16,6 +17,15 @@ class RoleController extends Controller
      */
     public function index()
     {
+        if (request()->ajax()) {
+            $roles = Role::query();
+    
+            // Fetch the roles using Yajra DataTables without the 'action' column
+            return DataTables::eloquent($roles)
+                ->make(true); // Simply return the roles data
+        }
+    
+        // Pass the roles to the Blade view
         $roles = Role::all();
         return view('roles.index', compact('roles'));
     }

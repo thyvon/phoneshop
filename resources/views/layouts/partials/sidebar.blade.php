@@ -35,64 +35,40 @@
         TIP: The menu items are not auto translated. You must have a residing lang file associated with the menu saved inside dist/media/data with reference to each 'data-i18n' attribute.
         -->
         <ul id="js-nav-menu" class="nav-menu">
-            <li class="active">
-                <a href="{{ url ('/')}}" title="Blank Project" data-filter-tags="blank page">
+            @php
+                $dashboardActive = request()->is('/');
+            @endphp
+
+            <li class="{{ $dashboardActive ? 'active' : '' }}">
+                <a href="{{ url('/') }}" title="Dashboard" data-filter-tags="blank page">
                     <i class="fal fa-chart-pie"></i>
-                    <span class="nav-link-text" data-i18n="nav.blankpage">Dashboard</span>
+                    <span class="nav-link-text">Dashboard</span>
                 </a>
             </li>
-            <li class="nav-title">Navigation Title</li>
-            <li>
-                <a href="#" title="Category" data-filter-tags="category">
-                    <i class="fal fa-file"></i>
-                    <span class="nav-link-text" data-i18n="nav.category">Category</span>
+
+            @php
+                $userManagementActive = request()->is('roles*') || request()->is('permissions*');
+            @endphp
+            <li class="nav-title">User Management</li>
+            <li class="{{ $userManagementActive ? 'active open' : '' }}">
+                <a href="#" title="User Management" data-filter-tags="user management">
+                    <i class="fal fa-users-cog"></i>
+                    <span class="nav-link-text">User Management</span>
                 </a>
                 <ul>
-                    <li>
-                        <a href="javascript:void(0);" title="Menu child" data-filter-tags="utilities menu child">
-                            <span class="nav-link-text" data-i18n="nav.utilities_menu_child">Sub-category</span>
+                    <li class="{{ request()->is('roles*') ? 'active' : '' }}">
+                        <a href="{{ route('roles.index') }}" title="Roles" data-filter-tags="roles">
+                            <span class="nav-link-text">Roles</span>
                         </a>
-                        <ul>
-                            <li>
-                                <a href="javascript:void(0);" title="Sublevel Item" data-filter-tags="utilities menu child sublevel item">
-                                    <span class="nav-link-text" data-i18n="nav.utilities_menu_child_sublevel_item">Sublevel Item</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" title="Another Item" data-filter-tags="utilities menu child another item">
-                                    <span class="nav-link-text" data-i18n="nav.utilities_menu_child_another_item">Another Item</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
-                    <li class="disabled">
-                        <a href="javascript:void(0);" title="Disabled item" data-filter-tags="utilities disabled item">
-                            <span class="nav-link-text" data-i18n="nav.utilities_disabled_item">Disabled item</span>
+                    <li class="{{ request()->is('permissions*') ? 'active' : '' }}">
+                        <a href="{{ route('permissions.index') }}" title="Permissions" data-filter-tags="permissions">
+                            <span class="nav-link-text">Permissions</span>
                         </a>
                     </li>
                 </ul>
             </li>
-            <!-- Example of open and active states -->
-            <li class="active open">
-                <a href="#" title="Category" data-filter-tags="category">
-                    <i class="fal fa-plus"></i>
-                    <span class="nav-link-text" data-i18n="nav.category">Open Item</span>
-                </a>
-                <ul>
-                    <li class="active open">
-                        <a href="javascript:void(0);" title="Menu child" data-filter-tags="utilities menu child">
-                            <span class="nav-link-text" data-i18n="nav.utilities_menu_child">Open Sub-category</span>
-                        </a>
-                        <ul>
-                            <li class="active">
-                                <a href="javascript:void(0);" title="Sublevel Item" data-filter-tags="utilities menu child sublevel item">
-                                    <span class="nav-link-text" data-i18n="nav.utilities_menu_child_sublevel_item">Active Item</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
+
         </ul>
         <div class="filter-message js-filter-message bg-success-600"></div>
     </nav>

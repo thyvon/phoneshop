@@ -1,11 +1,12 @@
-@php($header = 'Permissions')
+@php($header = 'Products')
 @extends('layouts.main')
 
 @section('content')
 <div id="app">
     <datatable
-        :headers='["Name", "Guard Name", "Created At"]'
-        :rows='@json($permissions)'
+        :headers='["Name", "Description", "Has Variants", "Created At"]'
+        :rows='@json($products)'
+        :actions="['edit', 'delete']"
         :options='{
             responsive: true,
             pageLength: {{ $pageLength ?? 20 }},
