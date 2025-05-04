@@ -26,19 +26,31 @@
               <button
                 type="button"
                 class="btn btn-secondary btn-sm dropdown-toggle"
-                data-bs-toggle="dropdown"
+                data-toggle="dropdown"
+                aria-haspopup="true"
                 aria-expanded="false"
+                title="Actions"
               >
-                Actions
+                <i class="fal fa-cog"></i>
               </button>
-              <ul class="dropdown-menu" aria-labelledby="actionsDropdown">
-                <li v-if="actions.includes('edit')">
-                  <a class="dropdown-item" href="#" @click="handleEdit(row.id)">Edit</a>
-                </li>
-                <li v-if="actions.includes('delete')">
-                  <a class="dropdown-item" href="#" @click="handleDelete(row.id)">Delete</a>
-                </li>
-              </ul>
+              <div class="dropdown-menu">
+                <a
+                  v-if="actions.includes('edit')"
+                  class="dropdown-item"
+                  href="#"
+                  @click.prevent="handleEdit(row.id)"
+                >
+                  Edit
+                </a>
+                <a
+                  v-if="actions.includes('delete')"
+                  class="dropdown-item"
+                  href="#"
+                  @click.prevent="handleDelete(row.id)"
+                >
+                  Delete
+                </a>
+              </div>
             </div>
           </td>
         </tr>
@@ -51,14 +63,8 @@
 import { ref, onMounted, nextTick } from 'vue'
 
 const props = defineProps({
-  headers: {
-    type: Array,
-    required: true,
-  },
-  rows: {
-    type: Array,
-    required: true,
-  },
+  headers: Array,
+  rows: Array,
   actions: {
     type: Array,
     default: () => [],
@@ -75,57 +81,41 @@ const props = defineProps({
 
 const table = ref(null)
 
-const normalizeKey = (key) => {
-  return key.toString().toLowerCase().replace(/\s+/g, '_')
-}
+const normalizeKey = (key) => key.toString().toLowerCase().replace(/\s+/g, '_')
 
-const isDateColumn = (key) => {
-  return key.endsWith('_at') || key.endsWith('_date')
-}
+const isDateColumn = (key) =>
+  key.endsWith('_at') || key.endsWith('_date')
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  const options = {
+  return new Date(dateString).toLocaleString('en-US', {
     year: 'numeric',
     month: 'long',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-  }
-  return new Date(dateString).toLocaleString('en-US', options)
+  })
 }
 
 const handleEdit = (id) => {
   console.log('Edit action for ID:', id)
-  // Emit an event or use router navigation for editing
 }
 
 const handleDelete = (id) => {
   console.log('Delete action for ID:', id)
-  // Emit an event or trigger modal/confirmation for deletion
 }
 
 onMounted(async () => {
   await nextTick()
   if (window.$ && table.value) {
-    $(table.value).DataTable(props.options)  // Initialize DataTable using jQuery
+    $(table.value).DataTable(props.options)
   } else {
-    console.warn('jQuery or DataTable is not loaded')
-  }
-
-  // Initialize Bootstrap dropdown if needed (SmartAdmin or Bootstrap)
-  if (window.bootstrap) {
-    const dropdowns = document.querySelectorAll('.dropdown-toggle')
-    dropdowns.forEach((dropdown) => {
-      new bootstrap.Dropdown(dropdown)
-    })
-  } else {
-    console.warn('Bootstrap JS is not loaded')
+    console.warn('jQuery or DataTables not loaded')
   }
 })
 </script>
 
 <style scoped>
-/* You can add custom styles if needed */
+/* Optional: Override SmartAdmin or Bootstrap styles here */
 </style>
