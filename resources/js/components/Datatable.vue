@@ -38,7 +38,7 @@
                   v-if="actions.includes('edit')"
                   class="dropdown-item"
                   href="#"
-                  @click.prevent="handleEdit(row.id)"
+                  @click.prevent="handleEdit(row)"
                 >
                   Edit
                 </a>
@@ -46,7 +46,7 @@
                   v-if="actions.includes('delete')"
                   class="dropdown-item"
                   href="#"
-                  @click.prevent="handleDelete(row.id)"
+                  @click.prevent="handleDelete(row)"
                 >
                   Delete
                 </a>
@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 
 const props = defineProps({
   headers: Array,
@@ -78,6 +78,8 @@ const props = defineProps({
     }),
   },
 })
+
+const emit = defineEmits(['edit', 'delete'])
 
 const table = ref(null)
 
@@ -98,23 +100,37 @@ const formatDate = (dateString) => {
   })
 }
 
-const handleEdit = (id) => {
-  console.log('Edit action for ID:', id)
+const handleEdit = (row) => {
+  emit('edit', row)
 }
 
-const handleDelete = (id) => {
-  console.log('Delete action for ID:', id)
+const handleDelete = (row) => {
+  emit('delete', row)
 }
 
-onMounted(async () => {
-  await nextTick()
+const initializeDataTable = () => {
   if (window.$ && table.value) {
     $(table.value).DataTable(props.options) // Initialize DataTable
-    // SmartAdmin dropdowns should already be initialized, so no need to call .dropdown()
   } else {
     console.warn('SmartAdmin or DataTables not loaded')
   }
+}
+
+onMounted(async () => {
+  await nextTick() // Ensure Vue has updated the DOM
+  initializeDataTable()
 })
+
+// Reinitialize DataTable when the data changes
+watch(
+  () => props.rows,
+  () => {
+    if (window.$ && table.value) {
+      $(table.value).DataTable().clear().rows.add(props.rows).draw()
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped>
