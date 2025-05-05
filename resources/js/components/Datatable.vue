@@ -31,7 +31,7 @@
                 aria-expanded="false"
                 title="Actions"
               >
-                <i class="fal fa-cog"></i>
+                <i class="fal fa-cog"></i> Actions
               </button>
               <div class="dropdown-menu">
                 <a
@@ -109,9 +109,10 @@ const handleDelete = (id) => {
 onMounted(async () => {
   await nextTick()
   if (window.$ && table.value) {
-    $(table.value).DataTable(props.options)
+    $(table.value).DataTable(props.options) // Initialize DataTable
+    // SmartAdmin dropdowns should already be initialized, so no need to call .dropdown()
   } else {
-    console.warn('jQuery or DataTables not loaded')
+    console.warn('SmartAdmin or DataTables not loaded')
   }
 })
 </script>

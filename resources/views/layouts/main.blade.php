@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="msapplication-tap-highlight" content="no">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Base CSS -->
     <link id="vendorsbundle" rel="stylesheet" href="{{ asset('template/css/vendors.bundle.css') }}">

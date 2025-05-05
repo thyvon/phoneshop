@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Models\User; // Make sure this is your actual User model namespace
 
 class RolePermissionSeeder extends Seeder
 {
@@ -39,5 +40,11 @@ class RolePermissionSeeder extends Seeder
             'sale.create', 'sale.view', 'sale.update', 'sale.delete',
             'product.view'
         ]);
+
+        // Assign admin role to user ID 1
+        $user = User::find(1);
+        if ($user) {
+            $user->assignRole('admin');
+        }
     }
 }

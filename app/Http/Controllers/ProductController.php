@@ -13,15 +13,6 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        if (request()->ajax()) {
-            $products = Product::query();
-    
-            // Fetch the roles using Yajra DataTables without the 'action' column
-            return DataTables::eloquent($products)
-                ->make(true); // Simply return the roles data
-        }
-
-        // For initial page load, pass an empty array as data will be fetched via AJAX
         $products = Product::all();
         return view('products.index', compact('products'));
     }
