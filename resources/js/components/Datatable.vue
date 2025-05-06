@@ -110,7 +110,7 @@ const handleDelete = (row) => {
 
 const initializeDataTable = () => {
   if (window.$ && table.value) {
-    $(table.value).DataTable(props.options) // Initialize DataTable
+    $(table.value).DataTable(props.options)
   } else {
     console.warn('SmartAdmin or DataTables not loaded')
   }

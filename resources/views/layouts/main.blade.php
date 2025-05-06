@@ -32,7 +32,7 @@
     <link rel="mask-icon" href="{{ asset('template/img/favicon/safari-pinned-tab.svg') }}" color="#5bbad5">
 </head>
 
-<body class="mod-bg-1">
+<body class="mod-skin-dark mod-nav-link">
     <script>
         'use strict';
         const classHolder = document.body;
