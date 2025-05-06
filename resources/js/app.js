@@ -1,6 +1,10 @@
 import './bootstrap'
 import { createApp } from 'vue'
 import axios from 'axios'
+// import 'bootstrap/dist/css/bootstrap.min.css';  // Import Bootstrap 5 CSS
+import 'bootstrap';  // Import Bootstrap 5 JS
+
+
 
 // SweetAlert2 utilities
 import { confirmDelete, successAlert, errorAlert } from './utils/swal'

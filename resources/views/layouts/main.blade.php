@@ -18,6 +18,9 @@
     <link id="vendorsbundle" rel="stylesheet" href="{{ asset('template/css/vendors.bundle.css') }}">
     <link id="appbundle" rel="stylesheet" href="{{ asset('template/css/app.bundle.css') }}">
     <link id="myskin" rel="stylesheet" href="{{ asset('template/css/skins/skin-master.css') }}">
+    <link rel="preload" href="/template/webfonts/fa-light-300.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/template/webfonts/nextgen-icons.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
     <link id="mytheme" rel="stylesheet" href="#">
 
     <!-- Page-specific Vite (for Vue) -->
@@ -30,9 +33,19 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('template/img/favicon/apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('template/img/favicon/favicon-32x32.png') }}">
     <link rel="mask-icon" href="{{ asset('template/img/favicon/safari-pinned-tab.svg') }}" color="#5bbad5">
+    <style>
+        #preloader {
+            transition: opacity 0.3s ease;
+        }
+    </style>
 </head>
 
 <body class="mod-skin-dark mod-nav-link">
+<div id="preloader" style="position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 30, 45, 0.7); display: flex; align-items: center; justify-content: center;">
+    <div class="spinner-border text-light" role="status">
+        <span class="visually-hidden"></span>
+    </div>
+</div>
     <script>
         'use strict';
         const classHolder = document.body;
@@ -68,6 +81,14 @@
         const resetSettings = () => {
             localStorage.removeItem("themeSettings");
         }
+
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
+                preloader.style.opacity = '0';
+                setTimeout(() => preloader.style.display = 'none', 300);
+            }
+        });
     </script>
 
     <div class="page-wrapper">

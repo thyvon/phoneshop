@@ -11,13 +11,19 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    public function index(Request $request)
+    // web: return the Blade + Vue “shell”
+    public function index()
     {
-        $products = Product::all();
-        return view('products.index', compact('products'));
+        return view('products.index');  
     }
 
-    public function store(Request $request)
+    // api: return JSON to the Vue component
+    public function getProducts()
+    {
+        return Product::all();
+    }
+
+    public function storeOrUpdate(Request $request, $id = null)
     {
         $request->validate([
             'name' => 'required|string',
@@ -26,36 +32,42 @@ class ProductController extends Controller
             'variants' => 'nullable|array',
         ]);
 
-        // Create Product
-        $product = Product::create([
-            'name' => $request->name,
-            'description' => $request->description,
-            'has_variants' => $request->has_variants,
-        ]);
+        // Check if updating an existing product
+        $product = $id ? Product::findOrFail($id) : new Product;
 
-        // If product has variants
+        // Update or create product
+        $product->name = $request->name;
+        $product->description = $request->description;
+        $product->has_variants = $request->has_variants;
+        $product->save();
+
+        // Handle product variants if any
         if ($product->has_variants && $request->has('variants')) {
             foreach ($request->variants as $variantData) {
                 // Expecting: ['price' => ..., 'stock' => ..., 'value_ids' => [1, 2]]
                 $sku = $this->generateSku($product->name, $variantData['value_ids']);
+                
+                // Check if variant exists for update or create new
+                $variant = isset($variantData['id']) ? ProductVariant::find($variantData['id']) : new ProductVariant;
+                $variant->product_id = $product->id;
+                $variant->sku = $sku;
+                $variant->price = $variantData['price'];
+                $variant->stock = $variantData['stock'];
+                $variant->save();
 
-                $variant = ProductVariant::create([
-                    'product_id' => $product->id,
-                    'sku' => $sku,
-                    'price' => $variantData['price'],
-                    'stock' => $variantData['stock'],
-                ]);
-
+                // Sync the variant values
                 $variant->values()->sync($variantData['value_ids']);
             }
         } else {
-            // Single product variant
-            ProductVariant::create([
-                'product_id' => $product->id,
-                'sku' => $this->generateSku($product->name),
-                'price' => $request->price,
-                'stock' => $request->stock,
-            ]);
+            // Handle single product variant if no variants are provided
+            if (!$product->has_variants) {
+                ProductVariant::create([
+                    'product_id' => $product->id,
+                    'sku' => $this->generateSku($product->name),
+                    'price' => $request->price,
+                    'stock' => $request->stock,
+                ]);
+            }
         }
 
         return response()->json(['product' => $product->load('variants')]);

@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,4 +17,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+// Protected routes (authentication required)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/products', [ProductController::class, 'getProducts']);
+    Route::post('/products', [ProductController::class, 'storeOrUpdate']); // For create
+    Route::put('/products/{id}', [ProductController::class, 'storeOrUpdate']); // For update
+    Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+    Route::post('/products/{id}/approve', [ProductController::class, 'approve']);
 });

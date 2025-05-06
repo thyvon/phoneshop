@@ -1,138 +1,103 @@
 <template>
   <div class="bg-white dark:bg-gray-800 p-6 rounded shadow text-gray-900 dark:text-gray-100">
-    <table ref="table" class="table table-bordered table-hover table-striped w-100 table-sm">
+    <table ref="table" class="table table-bordered w-100 table-sm">
       <thead>
         <tr>
-          <th>#</th>
-          <th v-for="(header, index) in headers" :key="index">
-            {{ header }}
-          </th>
+          <th v-for="(h, i) in headers" :key="i">{{ h }}</th>
           <th v-if="actions.length">Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
-          <td>{{ rowIndex + 1 }}</td>
-          <td v-for="(header, colIndex) in headers" :key="colIndex">
-            <span v-if="isDateColumn(normalizeKey(header))">
-              {{ formatDate(row[normalizeKey(header)]) }}
-            </span>
-            <span v-else>
-              {{ row[normalizeKey(header)] ?? '' }}
-            </span>
-          </td>
-          <td v-if="actions.length">
-            <div class="btn-group" role="group">
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm dropdown-toggle"
-                data-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false"
-                title="Actions"
-              >
-                <i class="fal fa-cog"></i> Actions
-              </button>
-              <div class="dropdown-menu">
-                <a
-                  v-if="actions.includes('edit')"
-                  class="dropdown-item"
-                  href="#"
-                  @click.prevent="handleEdit(row)"
-                >
-                  Edit
-                </a>
-                <a
-                  v-if="actions.includes('delete')"
-                  class="dropdown-item"
-                  href="#"
-                  @click.prevent="handleDelete(row)"
-                >
-                  Delete
-                </a>
-              </div>
-            </div>
-          </td>
-        </tr>
-      </tbody>
     </table>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
 
 const props = defineProps({
-  headers: Array,
-  rows: Array,
-  actions: {
-    type: Array,
-    default: () => [],
-  },
-  options: {
-    type: Object,
-    default: () => ({
-      responsive: true,
-      pageLength: 20,
-      lengthMenu: [[20, 50, 100, 1000], [20, 50, 100, 1000]],
-    }),
-  },
+  headers:     Array,
+  rows:        Array,
+  actions:     { type: Array, default: () => [] },
+  handlers:    { type: Object, default: () => ({}) },
+  options:     { type: Object, default: () => ({ responsive: true, pageLength: 20 }) },
 })
-
-const emit = defineEmits(['edit', 'delete'])
 
 const table = ref(null)
 
-const normalizeKey = (key) => key.toString().toLowerCase().replace(/\s+/g, '_')
+// normalize header labels to object keys
+const keys = props.headers.map(h => h.toString().toLowerCase().replace(/\s+/g,'_'))
 
-const isDateColumn = (key) =>
-  key.endsWith('_at') || key.endsWith('_date')
+const isDateColumn = key => key.endsWith('_at') || key.endsWith('_date')
 
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return ''
   return new Date(dateString).toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
+    year: 'numeric', month: 'long', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: true
   })
 }
 
-const handleEdit = (row) => {
-  emit('edit', row)
-}
-
-const handleDelete = (row) => {
-  emit('delete', row)
-}
-
-const initializeDataTable = () => {
-  if (window.$ && table.value) {
-    $(table.value).DataTable(props.options)
-  } else {
-    console.warn('SmartAdmin or DataTables not loaded')
+// build DataTables columns: map data keys and render dates
+const dtColumns = computed(() => {
+  const cols = keys.map(key => ({
+    data: key,
+    render: val => isDateColumn(key) ? formatDate(val) : (val ?? '')
+  }))
+  if (props.actions.length) {
+    cols.push({
+      data: null,
+      orderable: false,
+      render(row) {
+        let html = `
+          <div class="btn-group">
+            <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+              Actions
+            </button>
+            <ul class="dropdown-menu">
+        `
+        for (let a of props.actions) {
+          html += `<li><a class="dropdown-item" href="#" data-action="${a}" data-id="${row.id}">${a.charAt(0).toUpperCase() + a.slice(1)}</a></li>`
+        }
+        html += `</ul></div>`
+        return html
+      }
+    })
   }
+  return cols
+})
+
+function init() {
+  if (!window.$ || !table.value) return
+  $(table.value).DataTable({
+    ...props.options,
+    data: props.rows,
+    columns: dtColumns.value,
+    createdRow(rowEl, rowData) {
+      rowEl.querySelectorAll('[data-action]').forEach(el => {
+        el.addEventListener('click', e => {
+          e.preventDefault()
+          const action = el.dataset.action
+          props.handlers[action]?.(rowData)
+        })
+      })
+    }
+  })
 }
 
 onMounted(async () => {
-  await nextTick() // Ensure Vue has updated the DOM
-  initializeDataTable()
+  await nextTick()
+  init()
 })
 
-// Reinitialize DataTable when the data changes
-watch(
-  () => props.rows,
-  () => {
-    if (window.$ && table.value) {
-      $(table.value).DataTable().clear().rows.add(props.rows).draw()
-    }
-  },
-  { deep: true }
-)
+watch(() => props.rows, async () => {
+  if (window.$ && table.value) {
+    $(table.value).DataTable().destroy()
+    await nextTick()
+    init()
+  }
+}, { deep: true })
 </script>
 
 <style scoped>
-/* Optional: Override SmartAdmin or Bootstrap styles here */
+/* any overrides… */
 </style>
