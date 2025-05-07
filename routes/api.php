@@ -22,11 +22,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Protected routes (authentication required)
-Route::middleware('auth:sanctum')->group(function () {
+// Protected API routes using session (web guard)
+Route::middleware('auth')->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts']);
-    Route::post('/products', [ProductController::class, 'storeOrUpdate']); // For create
-    Route::put('/products/{id}', [ProductController::class, 'storeOrUpdate']); // For update
+    Route::post('/products', [ProductController::class, 'storeOrUpdate']);
+    Route::put('/products/{id}', [ProductController::class, 'storeOrUpdate']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
     Route::post('/products/{id}/approve', [ProductController::class, 'approve']);
 });
