@@ -38,12 +38,28 @@
             @php
                 $dashboardActive = request()->is('/');
             @endphp
-
             <li class="{{ $dashboardActive ? 'active' : '' }}">
                 <a href="{{ url('/') }}" title="Dashboard" data-filter-tags="blank page">
                     <i class="fal fa-chart-pie"></i>
                     <span class="nav-link-text">Dashboard</span>
                 </a>
+            </li>
+
+            @php
+                $ProductActive = request()->is('products*');
+            @endphp
+            <li class="{{ $ProductActive ? 'active open' : '' }}">
+                <a href="#" title="User Management" data-filter-tags="user management">
+                    <i class="fal fa-users-cog"></i>
+                    <span class="nav-link-text">Product Management</span>
+                </a>
+                <ul>
+                    <li class="{{ request()->is('products*') ? 'active' : '' }}">
+                        <a href="{{ route('products.index') }}" title="Product" data-filter-tags="products">
+                            <span class="nav-link-text">Products List</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
 
             @php
@@ -68,7 +84,6 @@
                     </li>
                 </ul>
             </li>
-
         </ul>
         <div class="filter-message js-filter-message bg-success-600"></div>
     </nav>

@@ -2,7 +2,7 @@ import './bootstrap'
 import { createApp } from 'vue'
 import axios from 'axios'
 // import 'bootstrap/dist/css/bootstrap.min.css';  // Import Bootstrap 5 CSS
-import 'bootstrap';  // Import Bootstrap 5 JS
+// import 'bootstrap';  // Import Bootstrap 5 JS
 
 
 

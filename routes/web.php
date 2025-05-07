@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('roles', RoleController::class);
     Route::resource('permissions', PermissionController::class);
-    Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 });
 
 require __DIR__.'/auth.php';
