@@ -25,12 +25,7 @@
     </datatable>
 
     <!-- Product Modal -->
-    <ProductModal
-      ref="productModal"
-      :isEditing="isEditing"
-      :form="form"
-      @submitted="loadProducts"
-    />
+    <ProductModal ref="productModal" :isEditing="isEditing" @submitted="loadProducts" />
   </div>
 </template>
 
@@ -42,11 +37,9 @@ import ProductModal from './ProductModal.vue'
 const productModal = ref(null)
 const products = ref([])
 const pageLength = ref(20)
-
 const isEditing = ref(false)
-const form = ref({})
 
-// Load products from backend
+// Fetch products from the API
 const fetchProducts = async () => {
   try {
     const { data } = await axios.get('/api/products')
@@ -56,40 +49,32 @@ const fetchProducts = async () => {
   }
 }
 
+// Fetch products when the component is mounted
 onMounted(() => {
   fetchProducts()
 })
 
-// Create
+// Open Create Modal
 const openCreateModal = () => {
   isEditing.value = false
-  form.value = {
-    name: '',
-    sku: '',
-    description: '',
-    has_variants: false,
-    price: null,
-    stock: null,
-    variants: []
-  }
-  productModal.value.show()
+  productModal.value.show({ isEditing: false })  // Pass an empty product for creating
 }
 
-// Edit
+// Open the Edit Modal
 const openEditModal = (product) => {
   isEditing.value = true
-  form.value = { ...product }
-  productModal.value.show()
+  productModal.value.show({ isEditing: true, ...product })  // Pass the product for editing
 }
 
-// Action handlers
-const handleEdit = (product) => openEditModal(product)
+// Handle Edit Action
+const handleEdit = (p) => openEditModal(p)
 
-const handleDelete = async (product) => {
-  if (!confirm(`Delete "${product.name}"?`)) return
+// Handle Delete Action
+const handleDelete = async (p) => {
+  if (!confirm(`Delete "${p.name}"?`)) return
   try {
-    await axios.delete(`/api/products/${product.id}`)
-    products.value = products.value.filter(p => p.id !== product.id)
+    await axios.delete(`/api/products/${p.id}`)
+    products.value = products.value.filter(x => x.id !== p.id)
     alert('Deleted')
   } catch (e) {
     console.error(e)
@@ -97,12 +82,17 @@ const handleDelete = async (product) => {
   }
 }
 
-const handleApprove = (product) => {
-  console.log('Approving product:', product)
+// Handle Approve Action (Add implementation as needed)
+const handleApprove = (p) => {
+  console.log('Approving', p)
 }
 
-// Reload after submit
+// Refresh products after submit
 const loadProducts = () => {
-  fetchProducts()
+  fetchProducts()  // Reload the products after submitting the form in the modal
 }
 </script>
+
+<style scoped>
+/* Add any styles you may need for the parent component */
+</style>
