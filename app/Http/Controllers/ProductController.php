@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product\Product;
 use App\Models\Product\ProductVariant;
 use App\Models\Product\VariantValue;
+use App\Models\Product\VariantAttribute;
 use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -86,5 +87,15 @@ class ProductController extends Controller
         }
 
         return $suffix ? "$code-$suffix" : $code;
+    }
+
+    public function getVariantValues()
+    {
+        return VariantValue::with('attribute')->get();
+    }
+
+    public function getAttributes()
+    {
+        return VariantAttribute::with('values')->get();
     }
 }

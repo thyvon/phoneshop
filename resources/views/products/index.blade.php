@@ -1,3 +1,4 @@
+@php($header = 'Product')
 @extends('layouts.main')
 
 @section('content')

@@ -25,6 +25,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Protected API routes using session (web guard)
 Route::middleware('auth')->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts']);
+    Route::get('/variant-values', [ProductController::class, 'getVariantValues']);
+    Route::get('/attributes-values', [ProductController::class, 'getAttributes']); 
     Route::post('/products', [ProductController::class, 'storeOrUpdate']);
     Route::put('/products/{id}', [ProductController::class, 'storeOrUpdate']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
