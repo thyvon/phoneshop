@@ -100,25 +100,25 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(variant, index) in generatedVariants" :key="index">
+                    <tr v-for="(variant, index) in generatedVariants" :key="index">
                     <td class="align-middle">{{ variant.description }}</td>
                     <td>
-                      <input
+                        <input
                         v-model="variant.price"
                         type="number"
                         class="form-control form-control-sm"
                         placeholder="Price"
-                      />
+                        />
                     </td>
                     <td>
-                      <input
+                        <input
                         v-model="variant.stock"
                         type="number"
                         class="form-control form-control-sm"
                         placeholder="Stock"
-                      />
+                        />
                     </td>
-                  </tr>
+                    </tr>
                 </tbody>
               </table>
             </div>
@@ -243,10 +243,12 @@ const generateVariants = () => {
     return {
       description: desc,
       price: prev.get(desc)?.price || '',
-      stock: prev.get(desc)?.stock || ''
+      stock: prev.get(desc)?.stock || '',
+      variant_value_ids: combo.map(({ valId }) => valId)  // Add the selected variant_value_ids
     }
   })
 }
+
 
 watch(() => selectedAttributes.value, () => {
   if (form.value.has_variants) generateVariants()

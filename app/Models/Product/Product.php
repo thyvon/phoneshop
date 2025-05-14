@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     use HasFactory;
-    
-    protected $fillable = ['name', 'description', 'has_variants'];
+
+    protected $fillable = ['sku', 'name', 'description', 'has_variants'];
 
     public function variants()
     {

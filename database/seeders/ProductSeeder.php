@@ -18,29 +18,35 @@ class ProductSeeder extends Seeder
         foreach (range(1, 10) as $index) {
             $hasVariants = $faker->boolean;
 
+            // Generate base product SKU
+            $baseSku = $this->generateBaseSku($index);
+
             $product = Product::create([
+                'sku' => $baseSku, // Save base SKU
                 'name' => $faker->unique()->word,
                 'description' => $faker->paragraph,
                 'has_variants' => $hasVariants,
             ]);
 
             if ($hasVariants) {
-                $this->createProductVariants($product, $faker);
+                $this->createProductVariants($product, $faker, $baseSku);
             } else {
-                $this->createSingleVariant($product, $faker);
+                $this->createSingleVariant($product, $faker, $baseSku);
             }
         }
     }
 
-    private function createProductVariants(Product $product, $faker)
+    private function createProductVariants(Product $product, $faker, $baseSku)
     {
         foreach (range(1, 2) as $i) {
             // Create 2 variant values (e.g., Color: Red, Size: M)
             $values = VariantValue::factory()->count(2)->create();
 
+            $variantSku = $this->generateVariantSku($baseSku, $i);
+
             $variant = ProductVariant::create([
                 'product_id' => $product->id,
-                'sku' => $this->generateSku($product->name, $values->pluck('id')->toArray()),
+                'sku' => $variantSku,
                 'price' => $faker->randomFloat(2, 10, 200),
                 'stock' => $faker->numberBetween(5, 100),
             ]);
@@ -50,28 +56,25 @@ class ProductSeeder extends Seeder
         }
     }
 
-    private function createSingleVariant(Product $product, $faker)
+    private function createSingleVariant(Product $product, $faker, $baseSku)
     {
+        $variantSku = $this->generateVariantSku($baseSku, 1);
+
         ProductVariant::create([
             'product_id' => $product->id,
-            'sku' => $this->generateSku($product->name),
+            'sku' => $variantSku,
             'price' => $faker->randomFloat(2, 5, 100),
             'stock' => $faker->numberBetween(10, 50),
         ]);
     }
 
-    private function generateSku($productName, $valueIds = [])
+    private function generateBaseSku($index)
     {
-        $code = strtoupper(Str::slug($productName, '-'));
-        $suffix = '';
+        return 'SKU-' . str_pad($index, 4, '0', STR_PAD_LEFT);
+    }
 
-        if (!empty($valueIds)) {
-            $values = VariantValue::whereIn('id', $valueIds)->get();
-            $suffix = $values->pluck('value')->map(function ($v) {
-                return strtoupper(Str::substr($v, 0, 3));
-            })->implode('-');
-        }
-
-        return $suffix ? "{$code}-{$suffix}" : $code;
+    private function generateVariantSku($baseSku, $variantIndex)
+    {
+        return $baseSku . '-' . str_pad($variantIndex, 2, '0', STR_PAD_LEFT);
     }
 }

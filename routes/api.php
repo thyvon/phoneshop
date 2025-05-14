@@ -27,8 +27,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth')->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts']);
     Route::get('/variant-values', [ProductController::class, 'getVariantValues']);
-    Route::get('/attributes-values', [ProductController::class, 'getAttributes']); 
-    Route::post('/products', [ProductController::class, 'storeOrUpdate']);
+    Route::get('/attributes-values', [ProductController::class, 'getAttributes']);
+    Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{id}', [ProductController::class, 'storeOrUpdate']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
     Route::post('/products/{id}/approve', [ProductController::class, 'approve']);

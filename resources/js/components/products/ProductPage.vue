@@ -82,6 +82,7 @@ const handleDelete = async (product) => {
     await axios.delete(`/api/products/${product.id}`)
     products.value = products.value.filter(x => x.id !== product.id)
     alert('Deleted')
+    loadProducts();
   } catch (e) {
     console.error(e)
     alert('Failed to delete')
