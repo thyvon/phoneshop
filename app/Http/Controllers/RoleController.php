@@ -17,18 +17,51 @@ class RoleController extends Controller
      */
     public function index()
     {
-        if (request()->ajax()) {
-            $roles = Role::query();
+        return view('roles.index');
+    }
+    public function getRoles(Request $request)
+    {
+        $query = Role::query();
     
-            // Fetch the roles using Yajra DataTables without the 'action' column
-            return DataTables::eloquent($roles)
-                ->make(true); // Simply return the roles data
+        // 🔍 Global search
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('guard_name', 'like', "%{$search}%");
+            });
         }
     
-        // Pass the roles to the Blade view
-        $roles = Role::all();
-        return view('roles.index', compact('roles'));
+        // ✅ Whitelisted sortable columns
+        $allowedSortColumns = ['name', 'guard_name', 'created_at', 'updated_at'];
+        $sortColumn = $request->get('sortColumn', 'created_at');
+        $sortDirection = $request->get('sortDirection', 'desc');
+    
+        if (!in_array($sortColumn, $allowedSortColumns)) {
+            $sortColumn = 'created_at';
+        }
+    
+        if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+            $sortDirection = 'desc';
+        }
+    
+        $query->orderBy($sortColumn, $sortDirection);
+    
+        // 📄 Pagination logic
+        $limit = intval($request->get('limit', 10));
+        $page = intval($request->get('page', 1));
+        $offset = ($page - 1) * $limit;
+    
+        $total = $query->count();
+        $data = $query->skip($offset)->take($limit)->get();
+    
+        return response()->json([
+            'data' => $data,
+            'recordsTotal' => $total,
+            'recordsFiltered' => $total,
+            'draw' => intval($request->get('draw', 1)),
+        ]);
     }
+    
 
     /**
      * Show the form for creating a new role.

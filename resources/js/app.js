@@ -7,12 +7,12 @@ import axios from 'axios'
 
 
 // SweetAlert2 utilities
-import { confirmDelete, successAlert, errorAlert } from './utils/swal'
+// import { confirmDelete, successAlert, errorAlert } from './utils/swal'
 
 // Register SweetAlert2 utilities globally
-window.confirmDelete = confirmDelete
-window.successAlert = successAlert
-window.errorAlert = errorAlert
+// window.confirmDelete = confirmDelete
+// window.successAlert = successAlert
+// window.errorAlert = errorAlert
 
 // Axios configuration
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
@@ -31,7 +31,7 @@ window.axios = axios
 // Vue Components
 import Example from './components/Example.vue'
 import Dashboard from './components/Dashboard.vue'
-import RoleList from './components/roles/Index.vue'
+import RolePage from './components/roles/RolePage.vue'
 import Datatable from './components/Datatable.vue'
 import ProductPage from './components/products/ProductPage.vue'
 
@@ -41,7 +41,7 @@ const app = createApp({})
 // Register global components
 app.component('example', Example)
 app.component('dashboard', Dashboard)
-app.component('role-list', RoleList)
+app.component('role-page', RolePage)
 app.component('datatable', Datatable)
 app.component('product-page', ProductPage)
 

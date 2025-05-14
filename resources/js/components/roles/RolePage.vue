@@ -4,7 +4,7 @@
       :headers="datatableHeaders"
       :fetch-url="datatableFetchUrl"
       :fetch-params="datatableParams"
-      :rows="products"
+      :rows="roles"
       :total-records="totalRecords"
       :actions="datatableActions"
       :handlers="datatableHandlers"
@@ -16,24 +16,23 @@
     >
       <template #additional-header>
         <button class="btn btn-success" @click="openCreateModal">
-          <i class="fal fa-plus"></i> Create Product
+          <i class="fal fa-plus"></i> Create Role
         </button>
       </template>
     </datatable>
 
-    <!-- Product Modal -->
-    <ProductModal ref="productModal" :isEditing="isEditing" @submitted="loadProducts" />
+    <!-- Uncomment and implement roleModal if needed -->
+    <!-- <RoleModal ref="roleModal" :isEditing="isEditing" @submitted="loadRoles" /> -->
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import axios from 'axios'
-import ProductModal from './ProductModal.vue'
+// import RoleModal from './RoleModal.vue'
 
-// Refs and reactive state
-const productModal = ref(null)
-const products = ref([])
+const roleModal = ref(null)
+const roles = ref([])
 const totalRecords = ref(0)
 const pageLength = ref(10)
 const isEditing = ref(false)
@@ -46,41 +45,38 @@ const datatableParams = reactive({
   sortDirection: 'desc',
 })
 
-// Derived data for the datatable component
+// ✅ Structured headers: display text + backend key
 const datatableHeaders = [
-  { text: 'Name', value: 'name', width: '20%', sortable: true },
-  { text: 'Description', value: 'description', width: '30%', sortable: true },
-  { text: 'Has Variants', value: 'has_variants', width: '10%', sortable: false },
-  { text: 'Created', value: 'created_at', width: '20%', sortable: true },
-  { text: 'Updated', value: 'updated_at', width: '20%', sortable: false }
-];
-const datatableFetchUrl = '/api/products'
-const datatableActions = ['edit', 'delete', 'approve']
+  { text: 'Name', value: 'name' },
+  { text: 'Guard Name', value: 'guard_name' },
+  { text: 'Created At', value: 'created_at' },
+]
+
+const datatableFetchUrl = '/api/roles'
+const datatableActions = ['edit', 'delete']
 const datatableOptions = {
-  responsive: false,
+  responsive: true,
   pageLength: pageLength.value,
   lengthMenu: [[10, 20, 50, 100, 1000], [10 ,20, 50, 100, 1000]],
 }
 
-// Modal handling
 const openCreateModal = () => {
   isEditing.value = false
-  productModal.value.show({ isEditing: false })
+  roleModal.value?.show({ isEditing: false })
 }
 
-const openEditModal = (product) => {
+const openEditModal = (role) => {
   isEditing.value = true
-  productModal.value.show({ isEditing: true, ...product })
+  roleModal.value?.show({ isEditing: true, ...role })
 }
 
-// Action handlers
 const handleEdit = openEditModal
 
-const handleDelete = async (product) => {
-  if (!confirm(`Delete "${product.name}"?`)) return
+const handleDelete = async (role) => {
+  if (!confirm(`Delete "${role.name}"?`)) return
   try {
-    await axios.delete(`/api/products/${product.id}`)
-    products.value = products.value.filter(x => x.id !== product.id)
+    await axios.delete(`/api/roles/${role.id}`)
+    roles.value = roles.value.filter(x => x.id !== role.id)
     alert('Deleted')
   } catch (e) {
     console.error(e)
@@ -88,11 +84,6 @@ const handleDelete = async (product) => {
   }
 }
 
-const handleApprove = (product) => {
-  console.log('Approving', product)
-}
-
-// Event handlers for the datatable
 const handleSortChange = ({ column, direction }) => {
   datatableParams.sortColumn = column
   datatableParams.sortDirection = direction
@@ -110,30 +101,23 @@ const handleSearchChange = (search) => {
   datatableParams.search = search
 }
 
-// Fetch products from the API
-const fetchProducts = async () => {
+const fetchRoles = async () => {
   try {
     const { data } = await axios.get(datatableFetchUrl, { params: datatableParams })
-    products.value = data.data
+    roles.value = data.data
     totalRecords.value = data.recordsTotal
   } catch (e) {
-    console.error('Error fetching products:', e)
+    console.error('Error fetching roles:', e)
   }
 }
 
-// Auto-fetch when any param changes
-watch(datatableParams, fetchProducts, { deep: true })
+watch(datatableParams, fetchRoles, { deep: true })
+onMounted(fetchRoles)
 
-// Lifecycle hook
-onMounted(fetchProducts)
-
-// Handlers for the datatable
 const datatableHandlers = {
   edit: handleEdit,
   delete: handleDelete,
-  approve: handleApprove,
 }
 
-// Refresh product list after modal actions
-const loadProducts = fetchProducts
+const loadRoles = fetchRoles
 </script>

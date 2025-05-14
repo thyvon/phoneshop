@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Api\AuthController;
 
 /*
@@ -31,4 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/products/{id}', [ProductController::class, 'storeOrUpdate']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
     Route::post('/products/{id}/approve', [ProductController::class, 'approve']);
+
+    //Roles
+    Route::get('/roles', [RoleController::class, 'getRoles']);
 });

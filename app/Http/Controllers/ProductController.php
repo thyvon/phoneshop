@@ -17,12 +17,41 @@ class ProductController extends Controller
     {
         return view('products.index');  
     }
-
-    // api: return JSON to the Vue component
-    public function getProducts()
+    
+    public function getProducts(Request $request)
     {
-        return Product::all();
+        $query = Product::query();
+    
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+    
+        $allowedSortColumns = ['name', 'description', 'created_at', 'updated_at'];
+        $sortColumn = $request->get('sortColumn', 'created_at');
+        $sortDirection = $request->get('sortDirection', 'desc');
+    
+        if (!in_array($sortColumn, $allowedSortColumns)) {
+            $sortColumn = 'created_at'; // Default to 'created_at' if not in allowed list
+        }
+        if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+            $sortDirection = 'desc'; // Default to 'desc' if direction is not valid
+        }
+    
+        $query->orderBy($sortColumn, $sortDirection);
+        $limit = intval($request->get('limit', 10));
+        $products = $query->paginate($limit);
+    
+        return response()->json([
+            'data' => $products->items(),
+            'recordsTotal' => $products->total(),
+            'recordsFiltered' => $products->total(),
+            'draw' => intval($request->get('draw')),
+        ]);
     }
+    
 
     public function storeOrUpdate(Request $request, $id = null)
     {

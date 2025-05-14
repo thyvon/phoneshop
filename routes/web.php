@@ -30,8 +30,9 @@ Route::middleware('auth')->group(function () {
 
 // Admin Routes - Only accessible to users with 'admin' role
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::resource('roles', RoleController::class);
+    // Route::resource('roles', RoleController::class);
     Route::resource('permissions', PermissionController::class);
+    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 });
 

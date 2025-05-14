@@ -1,121 +1,178 @@
 <template>
-  <div v-if="$slots['additional-header']" class="datatable-header">
-    <slot name="additional-header"></slot>
-  </div>
-  <div class="bg-white dark:bg-gray-800 p-6 rounded shadow text-gray-900 dark:text-gray-100">
-    <table ref="table" class="table table-bordered w-100 table-sm">
-      <thead>
-        <tr>
-          <th v-for="(h, i) in headers" :key="i">{{ h }}</th>
-          <th v-if="actions.length">Actions</th>
-        </tr>
-      </thead>
-    </table>
+  <div>
+    <div v-if="$slots['additional-header']" class="datatable-header mb-2">
+      <slot name="additional-header" />
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow text-gray-900 dark:text-gray-100">
+      <table ref="table" class="table table-bordered w-100 table-sm">
+        <thead>
+          <tr>
+            <th v-for="(h, i) in headers" :key="i">{{ h.text }}</th>
+            <th v-if="actions.length">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import axios from 'axios'
 
 const props = defineProps({
-  headers:     Array,
-  rows:        Array,
-  actions:     { type: Array, default: () => [] },
-  handlers:    { type: Object, default: () => ({}) },
-  options:     { type: Object, default: () => ({ responsive: true, pageLength: 20 }) },
+  headers: Array, // [{ text: 'Name', value: 'name' }, ...]
+  rows: Array,
+  actions: { type: Array, default: () => [] },
+  handlers: { type: Object, default: () => ({}) },
+  options: { type: Object, default: () => ({ responsive: true, pageLength: 20 }) },
+  fetchUrl: String,
+  totalRecords: Number,
+  fetchParams: Object,
 })
+
+const emit = defineEmits([
+  'sort-change',
+  'page-change',
+  'length-change',
+  'search-change',
+])
 
 const table = ref(null)
 
-// normalize header labels to object keys
-const keys = props.headers.map(h => h.toString().toLowerCase().replace(/\s+/g,'_'))
-
-const formatDateTime = dateString => {
-  if (!dateString) return ''
-  return new Date(dateString).toLocaleString('en-US', {
-    year: 'numeric', month: 'long', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hour12: true
-  })
+const formatDate = (dateString) => {
+  return dateString ? new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : ''
 }
 
-const formatDate = dateString => {
-  if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit'
-  })
+const formatDateTime = (dateString) => {
+  return dateString ? new Date(dateString).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : ''
 }
 
-// build DataTables columns: map data keys and render specific date formats
 const dtColumns = computed(() => {
-  const cols = keys.map(key => ({
-    data: key,
-    render: val => {
-      if (key === 'created_at') return formatDate(val)
-      if (key === 'updated_at') return formatDateTime(val)
-      return val ?? ''
-    }
-  }))
+  const cols = props.headers.map((h) => ({
+    data: h.value,
+    width: h.width || undefined, // Apply custom width if provided
+    render: (val) => renderColumnData(h.value, val),
+    orderable: h.sortable !== false // Ensure that sorting is enabled if 'sortable' is true
+  }));
 
+  // Add the actions column if actions are provided
   if (props.actions.length) {
     cols.push({
       data: null,
       orderable: false,
       className: 'text-center',
-      render(row) {
-        let html = `
-          <div class='dropdown d-inline-block dropleft'>
-            <a href='#' class='btn btn-sm btn-icon btn-outline-primary rounded-circle shadow-0' data-toggle='dropdown' aria-expanded='true' title='More options'>
-              <i class="fal fa-ellipsis-v"></i>
-            </a>
-            <div class='dropdown-menu'>
-        `
-        for (let a of props.actions) {
-          html += `<a class='dropdown-item' href='javascript:void(0);' data-action="${a}" data-id="${row.id}">${a.charAt(0).toUpperCase() + a.slice(1)}</a>`
-        }
-        html += `</div></div>`
-        return html
-      }
-    })
+      width: '80px', // Fixed width for actions
+      render: (row) => createActionButtons(row),
+    });
   }
 
-  return cols
-})
+  return cols;
+});
 
-function init() {
+const renderColumnData = (key, val) => {
+  // Handle specific columns with custom rendering
+  if (key === 'created_at') {
+    return formatDate(val); // Format date if key is 'created_at'
+  }
+  if (key === 'updated_at') {
+    return formatDateTime(val); // Format date-time if key is 'updated_at'
+  }
+  if (key === 'has_variants') {
+    // Handle 'has_variants' column with badges
+    const badgeClass = val ? 'badge badge-success' : 'badge badge-danger';
+    const text = val ? 'Yes' : 'No';
+    return `<span class="${badgeClass} text-center">${text}</span>`;
+  }
+  
+  // Default case for rendering
+  return val ?? ''; // Return value or empty string if null/undefined
+}
+
+
+const createActionButtons = (row) => {
+  return `
+    <div class="dropdown d-inline-block dropleft">
+      <a href="#" class="btn btn-sm btn-icon btn-outline-primary rounded-circle shadow-0" data-toggle="dropdown">
+        <i class="fal fa-ellipsis-v"></i>
+      </a>
+      <div class="dropdown-menu">
+        ${props.actions.map(action => `
+          <a class="dropdown-item" href="javascript:void(0);" data-action="${action}" data-id="${row.id}">
+            ${capitalize(action)}
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `
+}
+
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+
+const fetchData = async (params) => {
+  try {
+    const { data } = await axios.get(props.fetchUrl, { params })
+    return data
+  } catch (e) {
+    console.error('Fetch error:', e)
+    return { data: [], recordsTotal: 0, recordsFiltered: 0 }
+  }
+}
+
+const initDataTable = () => {
   if (!window.$ || !table.value) return
+
   $(table.value).DataTable({
     ...props.options,
-    data: props.rows,
+    processing: true,
+    serverSide: true,
+    ajax: async (data, callback) => {
+      const { column, dir } = data.order[0] ?? {}
+
+      const sortHeader = props.headers[column]
+      const sortColumn = sortHeader?.value || 'created_at'
+      const sortDirection = dir || 'asc'
+
+      emit('sort-change', { column: sortColumn, direction: sortDirection })
+      emit('page-change', Math.ceil(data.start / data.length) + 1)
+      emit('length-change', data.length)
+      emit('search-change', data.search.value)
+
+      const params = {
+        ...props.fetchParams,
+        page: Math.ceil(data.start / data.length) + 1,
+        limit: data.length,
+        sortColumn,
+        sortDirection,
+        search: data.search.value,
+      }
+
+      const { data: responseData, recordsTotal, recordsFiltered } = await fetchData(params)
+
+      callback({
+        draw: data.draw,
+        recordsTotal,
+        recordsFiltered,
+        data: responseData,
+      })
+    },
     columns: dtColumns.value,
-    createdRow(rowEl, rowData) {
+    createdRow: (rowEl, rowData) => {
       rowEl.querySelectorAll('[data-action]').forEach(el => {
-        el.addEventListener('click', e => {
+        el.addEventListener('click', (e) => {
           e.preventDefault()
           const action = el.dataset.action
           props.handlers[action]?.(rowData)
         })
       })
-    }
+    },
   })
 }
 
 onMounted(async () => {
   await nextTick()
-  init()
+  initDataTable()
 })
-
-watch(() => props.rows, async () => {
-  if (window.$ && table.value) {
-    $(table.value).DataTable().destroy()
-    await nextTick()
-    init()
-  }
-}, { deep: true })
 </script>
-
-
-<style scoped>
-/* any overrides… */
-</style>
