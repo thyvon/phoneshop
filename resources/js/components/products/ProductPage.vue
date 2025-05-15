@@ -30,6 +30,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import axios from 'axios'
 import ProductModal from './ProductModal.vue'
+import { confirmAction, showAlert } from '@/utils/bootbox';
 
 // Refs and reactive state
 const productModal = ref(null)
@@ -87,14 +88,21 @@ const openEditModal = async (product) => {
 const handleEdit = openEditModal
 
 const handleDelete = async (product) => {
-  if (!confirm(`Delete "${product.name}"?`)) return
+  const confirmed = await confirmAction(
+    `Delete "${product.name}"?`,
+    '<strong>Warning:</strong> This action cannot be undone!'
+  )
+
+  if (!confirmed) return
+
   try {
     await axios.delete(`/api/products/${product.id}`)
     products.value = products.value.filter(x => x.id !== product.id)
-    alert('Deleted')
+
+    showAlert('Deleted', `"${product.name}" was deleted successfully.`, 'success')
   } catch (e) {
     console.error(e)
-    alert('Failed to delete')
+    showAlert('Failed to delete', e.response?.data?.message || 'Something went wrong.', 'danger')
   }
 }
 

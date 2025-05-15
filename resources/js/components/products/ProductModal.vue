@@ -295,8 +295,6 @@ const submitForm = async () => {
       variants: form.value.has_variants ? generatedVariants.value : []
     }
 
-    console.log('Submitting payload:', payload)
-
     await axios[method](url, payload)
     emit('submitted')
     hideModal()
