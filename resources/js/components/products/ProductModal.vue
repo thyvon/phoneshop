@@ -170,9 +170,23 @@ const show = async (product = null) => {
   await loadAttributes()
 
   if (product) {
-    form.value = { ...form.value, ...product, variants: product.variants || [] }
+    form.value = {
+      ...form.value,
+      ...product,
+      id: product.id, // explicit, for clarity
+      has_variants: Boolean(product.has_variants), // force boolean
+      variants: product.variants || [],
+      price: product.price ?? null,  // set price and stock explicitly in case they're missing in form.value
+      stock: product.stock ?? null,
+    }
+
     selectedAttributes.value = getSelectedFromVariants(product.variants || [])
+
+    if (form.value.has_variants) {
+      generateVariants()
+    }
   } else {
+    // initialize selectedAttributes to empty arrays
     availableAttributes.value.forEach(attr => {
       if (attr.values?.length) selectedAttributes.value[attr.id] = []
     })
@@ -180,6 +194,7 @@ const show = async (product = null) => {
 
   modal.value?.show()
 }
+
 
 const hideModal = () => modal.value?.close()
 
@@ -209,10 +224,10 @@ const toggleAttribute = (attrId, valId) => {
 const getSelectedFromVariants = (variants = []) => {
   const map = {}
   variants.forEach(variant => {
-    if (variant.options) {
-      variant.options.forEach(opt => {
-        const attrId = opt.attribute?.id
-        const valId = opt.id
+    if (variant.values) {
+      variant.values.forEach(val => {
+        const attrId = val.attribute?.id
+        const valId = val.id
         if (!attrId || !valId) return
         if (!map[attrId]) map[attrId] = []
         if (!map[attrId].includes(valId)) map[attrId].push(valId)
@@ -221,6 +236,7 @@ const getSelectedFromVariants = (variants = []) => {
   })
   return map
 }
+
 
 const generateVariants = () => {
   const combinations = Object.entries(selectedAttributes.value)
@@ -231,9 +247,22 @@ const generateVariants = () => {
     acc.length === 0 ? curr.map(c => [c]) : acc.flatMap(a => curr.map(c => [...a, c]))
   , [])
 
-  const prev = new Map(generatedVariants.value.map(v => [v.description, v]))
+  // Create a map of existing variant key -> variant
+  const existingVariantMap = new Map(
+    form.value.variants.map(v => {
+      const key = (v.values || [])
+        .map(val => val.id)
+        .sort((a, b) => a - b)
+        .join('-')
+      return [key, v]
+    })
+  )
 
   generatedVariants.value = allCombos.map(combo => {
+    const valIds = combo.map(({ valId }) => valId).sort((a, b) => a - b)
+    const key = valIds.join('-')
+    const existing = existingVariantMap.get(key)
+
     const desc = combo.map(({ attrId, valId }) => {
       const attr = availableAttributes.value.find(a => a.id === attrId)
       const val = attr?.values.find(v => v.id === valId)
@@ -242,9 +271,9 @@ const generateVariants = () => {
 
     return {
       description: desc,
-      price: prev.get(desc)?.price || '',
-      stock: prev.get(desc)?.stock || '',
-      variant_value_ids: combo.map(({ valId }) => valId)  // Add the selected variant_value_ids
+      price: existing?.price || '',
+      stock: existing?.stock || '',
+      variant_value_ids: valIds,
     }
   })
 }
@@ -257,13 +286,15 @@ watch(() => selectedAttributes.value, () => {
 const submitForm = async () => {
   try {
     const method = props.isEditing ? 'put' : 'post'
-    const url = props.isEditing ? `/api/products/${props.currentProduct.id}` : '/api/products'
+    const url = props.isEditing
+      ? `/api/products/${form.value.id}` // ✅ Use form.value.id
+      : '/api/products'
+
     const payload = {
       ...form.value,
       variants: form.value.has_variants ? generatedVariants.value : []
     }
 
-    // Log the payload to the console
     console.log('Submitting payload:', payload)
 
     await axios[method](url, payload)
@@ -274,6 +305,7 @@ const submitForm = async () => {
     alert('Failed to save product')
   }
 }
+
 
 defineExpose({ show })
 </script>

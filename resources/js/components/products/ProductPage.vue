@@ -68,9 +68,19 @@ const openCreateModal = () => {
   productModal.value.show({ isEditing: false })
 }
 
-const openEditModal = (product) => {
-  isEditing.value = true
-  productModal.value.show({ isEditing: true, ...product })
+const openEditModal = async (product) => {
+  try {
+    const response = await axios.get(`/api/products/${product.id}/edit`)
+    const fullProduct = response.data.product
+
+    isEditing.value = true
+    productModal.value.show({
+      isEditing: true,
+      ...fullProduct
+    })
+  } catch (error) {
+    console.error('Failed to fetch product data for editing:', error)
+  }
 }
 
 // Action handlers
@@ -82,7 +92,6 @@ const handleDelete = async (product) => {
     await axios.delete(`/api/products/${product.id}`)
     products.value = products.value.filter(x => x.id !== product.id)
     alert('Deleted')
-    loadProducts();
   } catch (e) {
     console.error(e)
     alert('Failed to delete')
