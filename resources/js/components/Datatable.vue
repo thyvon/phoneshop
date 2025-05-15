@@ -95,9 +95,9 @@ const renderColumnData = (key, val) => {
 const createActionButtons = (row) => {
   return `
     <div class="dropdown d-inline-block dropleft">
-      <a href="#" class="btn btn-sm btn-icon btn-outline-primary rounded-circle shadow-0" data-toggle="dropdown">
+      <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-circle shadow-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <i class="fal fa-ellipsis-v"></i>
-      </a>
+      </button>
       <div class="dropdown-menu">
         ${props.actions.map(action => `
           <a class="dropdown-item" href="javascript:void(0);" data-action="${action}" data-id="${row.id}">
