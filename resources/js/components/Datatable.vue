@@ -124,12 +124,13 @@ const fetchData = async (params) => {
 const initDataTable = () => {
   if (!window.$ || !table.value) return
 
-  const $dt = $(table.value).DataTable({
+  $(table.value).DataTable({
     ...props.options,
     processing: true,
     serverSide: true,
     ajax: async (data, callback) => {
       const { column, dir } = data.order[0] ?? {}
+
       const sortHeader = props.headers[column]
       const sortColumn = sortHeader?.value || 'created_at'
       const sortDirection = dir || 'asc'
@@ -159,7 +160,6 @@ const initDataTable = () => {
     },
     columns: dtColumns.value,
     createdRow: (rowEl, rowData) => {
-      $(rowEl).data('rowData', rowData)
       rowEl.querySelectorAll('[data-action]').forEach(el => {
         el.addEventListener('click', (e) => {
           e.preventDefault()
@@ -168,37 +168,6 @@ const initDataTable = () => {
         })
       })
     },
-    responsive: {
-      details: {
-        renderer: (api, rowIdx, columns) => {
-          const rowData = api.row(rowIdx).data()
-          const detailsHtml = columns
-            .map(col => col.hidden
-              ? `<tr><td>${col.title}:</td><td>${col.data}</td></tr>`
-              : '')
-            .join('')
-
-          const actionsHtml = props.actions.length
-            ? `<tr><td>Actions:</td><td>${createActionButtons(rowData)}</td></tr>`
-            : ''
-
-          return `<table class="table table-sm mb-0">${detailsHtml}${actionsHtml}</table>`
-        }
-      }
-    }
-  })
-
-  // Global click handler for both normal and child rows
-  $(table.value).on('click', '[data-action]', function (e) {
-    e.preventDefault()
-    const action = this.dataset.action
-    const $tr = $(this).closest('tr')
-    const rowData = $tr.hasClass('child')
-      ? $tr.prev().data('rowData')
-      : $tr.data('rowData')
-    if (action && props.handlers[action]) {
-      props.handlers[action](rowData)
-    }
   })
 }
 
