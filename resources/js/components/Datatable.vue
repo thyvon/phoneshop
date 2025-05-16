@@ -96,6 +96,8 @@ const renderColumnData = (key, val) => {
 }
 
 const createActionButtons = (row) => {
+  const encodedRow = encodeURIComponent(JSON.stringify(row))
+
   return `
     <div class="dropdown d-inline-block dropleft">
       <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-circle shadow-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -105,17 +107,16 @@ const createActionButtons = (row) => {
         ${props.actions
           .map(
             (action) => `
-          <a class="dropdown-item" href="javascript:void(0);" data-action="${action}" data-id="${row.id}">
-            ${capitalize(action)}
-          </a>
-        `
+              <a class="dropdown-item" href="#" data-action="${action}" data-row="${encodedRow}">
+                ${capitalize(action)}
+              </a>
+            `
           )
           .join('')}
       </div>
     </div>
   `
 }
-
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
 
 const fetchData = async (params) => {
@@ -136,13 +137,12 @@ const initDataTable = () => {
     $(table.value).DataTable().destroy()
   }
 
-  const dt = $(table.value).DataTable({
+  $(table.value).DataTable({
     ...props.options,
     processing: true,
     serverSide: true,
     ajax: async (data, callback) => {
       const { column, dir } = data.order[0] ?? {}
-
       const sortHeader = props.headers[column]
       const sortColumn = sortHeader?.value || 'created_at'
       const sortDirection = dir || 'asc'
@@ -171,48 +171,28 @@ const initDataTable = () => {
       })
     },
     columns: dtColumns.value,
-    createdRow: (rowEl, rowData) => {
-      // Still add event listeners for desktop
-      rowEl.querySelectorAll('[data-action]').forEach((el) => {
-        el.addEventListener('click', (e) => {
+
+    // Attach click listeners that work in both desktop and responsive views
+    drawCallback: function () {
+      $(table.value)
+        .off('click', '[data-action]')
+        .on('click', '[data-action]', function (e) {
           e.preventDefault()
-          const action = el.dataset.action
-          props.handlers[action]?.(rowData)
+          const action = this.dataset.action
+          const rowEncoded = this.dataset.row
+
+          try {
+            const rowData = JSON.parse(decodeURIComponent(rowEncoded))
+            if (props.handlers[action]) {
+              props.handlers[action](rowData)
+            } else {
+              console.warn(`No handler found for action: ${action}`)
+            }
+          } catch (err) {
+            console.error('Error parsing row data:', err)
+          }
         })
-      })
     },
-  })
-
-  $(table.value)
-  .off('click', '[data-action]')
-  .on('click', '[data-action]', function (e) {
-    e.preventDefault()
-
-    const action = this.dataset.action
-    const dt = $(table.value).DataTable()
-
-    // Try to get row from closest <tr>, fallback to parent <li> for responsive child rows
-    let rowData = null
-
-    const $tr = $(this).closest('tr')
-    if ($tr.length && dt.row($tr).data()) {
-      rowData = dt.row($tr).data()
-    } else {
-      // fallback: inside responsive <li>
-      const $li = $(this).closest('li')
-      rowData = dt.row($li).data()
-    }
-
-    if (!rowData) {
-      console.warn('Row data not found for action:', action)
-      return
-    }
-
-    if (props.handlers[action]) {
-      props.handlers[action](rowData)
-    } else {
-      console.warn(`No handler for ${action}`)
-    }
   })
 }
 
