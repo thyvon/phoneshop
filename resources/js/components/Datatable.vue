@@ -172,9 +172,9 @@ const initDataTable = () => {
     },
     columns: dtColumns.value,
 
-    // Attach click listeners that work in both desktop and responsive views
     drawCallback: function () {
-      $(table.value)
+      // Bind delegated click handler on the document, not table element
+      $(document)
         .off('click', '[data-action]')
         .on('click', '[data-action]', function (e) {
           e.preventDefault()
