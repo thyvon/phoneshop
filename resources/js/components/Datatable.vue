@@ -23,7 +23,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import axios from 'axios'
 
 const props = defineProps({
-  headers: Array, // [{ text: 'Name', value: 'name' }, ...]
+  headers: Array,
   rows: Array,
   actions: { type: Array, default: () => [] },
   handlers: { type: Object, default: () => ({}) },
@@ -41,6 +41,7 @@ const emit = defineEmits([
 ])
 
 const table = ref(null)
+let dataTableInstance = null
 
 const formatDate = (dateString) => {
   return dateString
@@ -57,18 +58,17 @@ const formatDateTime = (dateString) => {
 const dtColumns = computed(() => {
   const cols = props.headers.map((h) => ({
     data: h.value,
-    width: h.width || undefined, // Apply custom width if provided
+    width: h.width || undefined,
     render: (val) => renderColumnData(h.value, val),
-    orderable: h.sortable !== false, // Ensure that sorting is enabled if 'sortable' is true
+    orderable: h.sortable !== false,
   }))
 
-  // Add the actions column if actions are provided
   if (props.actions.length) {
     cols.push({
       data: null,
       orderable: false,
       className: 'text-center',
-      width: '80px', // Fixed width for actions
+      width: '80px',
       render: (row) => createActionButtons(row),
     })
   }
@@ -77,22 +77,18 @@ const dtColumns = computed(() => {
 })
 
 const renderColumnData = (key, val) => {
-  // Handle specific columns with custom rendering
   if (key === 'created_at') {
-    return formatDate(val) // Format date if key is 'created_at'
+    return formatDate(val)
   }
   if (key === 'updated_at') {
-    return formatDateTime(val) // Format date-time if key is 'updated_at'
+    return formatDateTime(val)
   }
   if (key === 'has_variants') {
-    // Handle 'has_variants' column with badges
     const badgeClass = val ? 'badge badge-success' : 'badge badge-danger'
     const text = val ? 'Yes' : 'No'
     return `<span class="${badgeClass} text-center">${text}</span>`
   }
-
-  // Default case for rendering
-  return val ?? '' // Return value or empty string if null/undefined
+  return val ?? ''
 }
 
 const createActionButtons = (row) => {
@@ -132,12 +128,11 @@ const fetchData = async (params) => {
 const initDataTable = () => {
   if (!window.$ || !table.value) return
 
-  // Destroy existing DataTable instance if it exists
   if ($.fn.DataTable.isDataTable(table.value)) {
     $(table.value).DataTable().destroy()
   }
 
-  $(table.value).DataTable({
+  dataTableInstance = $(table.value).DataTable({
     ...props.options,
     processing: true,
     serverSide: true,
@@ -171,55 +166,55 @@ const initDataTable = () => {
       })
     },
     columns: dtColumns.value,
-
-    drawCallback: function () {
-      // Bind delegated click handler on the document, not table element
-      $(document)
-        .off('click', '[data-action]')
-        .on('click', '[data-action]', function (e) {
-          e.preventDefault()
-          const action = this.dataset.action
-          const rowEncoded = this.dataset.row
-
-          try {
-            const rowData = JSON.parse(decodeURIComponent(rowEncoded))
-            if (props.handlers[action]) {
-              props.handlers[action](rowData)
-            } else {
-              console.warn(`No handler found for action: ${action}`)
-            }
-          } catch (err) {
-            console.error('Error parsing row data:', err)
-          }
-        })
-    },
   })
 }
 
-// Watch for changes in rows and update the DataTable
+const onActionClick = (e) => {
+  const target = e.target.closest('[data-action]')
+  if (!target) return
+
+  e.preventDefault()
+
+  const action = target.dataset.action
+  const rowEncoded = target.dataset.row
+
+  try {
+    const rowData = JSON.parse(decodeURIComponent(rowEncoded))
+    if (props.handlers[action]) {
+      props.handlers[action](rowData)
+    } else {
+      console.warn(`No handler found for action: ${action}`)
+    }
+  } catch (err) {
+    console.error('Error parsing row data:', err)
+  }
+}
+
 watch(
   () => props.rows,
   async () => {
-    if (table.value) {
-      const dataTable = $(table.value).DataTable()
-      dataTable.clear() // Clear the existing data
-      dataTable.rows.add(props.rows) // Add the new rows
-      dataTable.draw() // Redraw the table
+    if (table.value && dataTableInstance) {
+      dataTableInstance.clear()
+      dataTableInstance.rows.add(props.rows)
+      dataTableInstance.draw()
     }
   },
   { deep: true }
 )
 
-// Initialize DataTable on mount
 onMounted(async () => {
   await nextTick()
   initDataTable()
+
+  // Attach event listener once on document
+  document.addEventListener('click', onActionClick)
 })
 
-// Destroy DataTable on unmount
 onUnmounted(() => {
-  if (table.value) {
-    $(table.value).DataTable().destroy(true)
+  if (dataTableInstance) {
+    dataTableInstance.destroy(true)
+    dataTableInstance = null
   }
+  document.removeEventListener('click', onActionClick)
 })
 </script>
