@@ -5,15 +5,6 @@ import axios from 'axios'
 // import 'bootstrap';  // Import Bootstrap 5 JS
 
 
-
-// SweetAlert2 utilities
-// import { confirmDelete, successAlert, errorAlert } from './utils/swal'
-
-// Register SweetAlert2 utilities globally
-// window.confirmDelete = confirmDelete
-// window.successAlert = successAlert
-// window.errorAlert = errorAlert
-
 // Axios configuration
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 

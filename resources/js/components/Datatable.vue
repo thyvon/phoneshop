@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import axios from 'axios'
 
 const props = defineProps({
@@ -43,11 +43,15 @@ const emit = defineEmits([
 const table = ref(null)
 
 const formatDate = (dateString) => {
-  return dateString ? new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : ''
+  return dateString
+    ? new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+    : ''
 }
 
 const formatDateTime = (dateString) => {
-  return dateString ? new Date(dateString).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : ''
+  return dateString
+    ? new Date(dateString).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })
+    : ''
 }
 
 const dtColumns = computed(() => {
@@ -55,8 +59,8 @@ const dtColumns = computed(() => {
     data: h.value,
     width: h.width || undefined, // Apply custom width if provided
     render: (val) => renderColumnData(h.value, val),
-    orderable: h.sortable !== false // Ensure that sorting is enabled if 'sortable' is true
-  }));
+    orderable: h.sortable !== false, // Ensure that sorting is enabled if 'sortable' is true
+  }))
 
   // Add the actions column if actions are provided
   if (props.actions.length) {
@@ -66,31 +70,30 @@ const dtColumns = computed(() => {
       className: 'text-center',
       width: '80px', // Fixed width for actions
       render: (row) => createActionButtons(row),
-    });
+    })
   }
 
-  return cols;
-});
+  return cols
+})
 
 const renderColumnData = (key, val) => {
   // Handle specific columns with custom rendering
   if (key === 'created_at') {
-    return formatDate(val); // Format date if key is 'created_at'
+    return formatDate(val) // Format date if key is 'created_at'
   }
   if (key === 'updated_at') {
-    return formatDateTime(val); // Format date-time if key is 'updated_at'
+    return formatDateTime(val) // Format date-time if key is 'updated_at'
   }
   if (key === 'has_variants') {
     // Handle 'has_variants' column with badges
-    const badgeClass = val ? 'badge badge-success' : 'badge badge-danger';
-    const text = val ? 'Yes' : 'No';
-    return `<span class="${badgeClass} text-center">${text}</span>`;
+    const badgeClass = val ? 'badge badge-success' : 'badge badge-danger'
+    const text = val ? 'Yes' : 'No'
+    return `<span class="${badgeClass} text-center">${text}</span>`
   }
-  
-  // Default case for rendering
-  return val ?? ''; // Return value or empty string if null/undefined
-}
 
+  // Default case for rendering
+  return val ?? '' // Return value or empty string if null/undefined
+}
 
 const createActionButtons = (row) => {
   return `
@@ -99,11 +102,15 @@ const createActionButtons = (row) => {
         <i class="fal fa-ellipsis-v"></i>
       </button>
       <div class="dropdown-menu">
-        ${props.actions.map(action => `
+        ${props.actions
+          .map(
+            (action) => `
           <a class="dropdown-item" href="javascript:void(0);" data-action="${action}" data-id="${row.id}">
             ${capitalize(action)}
           </a>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
     </div>
   `
@@ -123,6 +130,11 @@ const fetchData = async (params) => {
 
 const initDataTable = () => {
   if (!window.$ || !table.value) return
+
+  // Destroy existing DataTable instance if it exists
+  if ($.fn.DataTable.isDataTable(table.value)) {
+    $(table.value).DataTable().destroy()
+  }
 
   $(table.value).DataTable({
     ...props.options,
@@ -160,7 +172,7 @@ const initDataTable = () => {
     },
     columns: dtColumns.value,
     createdRow: (rowEl, rowData) => {
-      rowEl.querySelectorAll('[data-action]').forEach(el => {
+      rowEl.querySelectorAll('[data-action]').forEach((el) => {
         el.addEventListener('click', (e) => {
           e.preventDefault()
           const action = el.dataset.action
@@ -171,8 +183,30 @@ const initDataTable = () => {
   })
 }
 
+// Watch for changes in rows and update the DataTable
+watch(
+  () => props.rows,
+  async () => {
+    if (table.value) {
+      const dataTable = $(table.value).DataTable()
+      dataTable.clear() // Clear the existing data
+      dataTable.rows.add(props.rows) // Add the new rows
+      dataTable.draw() // Redraw the table
+    }
+  },
+  { deep: true }
+)
+
+// Initialize DataTable on mount
 onMounted(async () => {
   await nextTick()
   initDataTable()
+})
+
+// Destroy DataTable on unmount
+onUnmounted(() => {
+  if (table.value) {
+    $(table.value).DataTable().destroy(true)
+  }
 })
 </script>

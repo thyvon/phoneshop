@@ -58,7 +58,7 @@ const datatableHeaders = [
 const datatableFetchUrl = '/api/products'
 const datatableActions = ['edit', 'delete', 'approve']
 const datatableOptions = {
-  responsive: false,
+  responsive: true,
   pageLength: pageLength.value,
   lengthMenu: [[10, 20, 50, 100, 1000], [10 ,20, 50, 100, 1000]],
 }
@@ -94,6 +94,8 @@ const handleDelete = async (product) => {
   )
 
   if (!confirmed) return
+
+  await fetchProducts()
 
   try {
     await axios.delete(`/api/products/${product.id}`)
