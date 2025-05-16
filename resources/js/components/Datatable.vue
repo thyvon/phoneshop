@@ -183,33 +183,37 @@ const initDataTable = () => {
     },
   })
 
-  // Fix for action buttons inside responsive (child) rows
   $(table.value)
-    .off('click', '[data-action]')
-    .on('click', '[data-action]', function (e) {
-      e.preventDefault()
+  .off('click', '[data-action]')
+  .on('click', '[data-action]', function (e) {
+    e.preventDefault()
 
-      const action = this.dataset.action
-      let tr = $(this).closest('tr')
+    const action = this.dataset.action
+    const dt = $(table.value).DataTable()
 
-      // If this is a responsive child row, get the parent row
-      if (tr.hasClass('child')) {
-        tr = tr.prev()
-      }
+    // Try to get row from closest <tr>, fallback to parent <li> for responsive child rows
+    let rowData = null
 
-      const rowData = dt.row(tr).data()
+    const $tr = $(this).closest('tr')
+    if ($tr.length && dt.row($tr).data()) {
+      rowData = dt.row($tr).data()
+    } else {
+      // fallback: inside responsive <li>
+      const $li = $(this).closest('li')
+      rowData = dt.row($li).data()
+    }
 
-      if (!rowData) {
-        console.warn('No row data found for clicked action')
-        return
-      }
+    if (!rowData) {
+      console.warn('Row data not found for action:', action)
+      return
+    }
 
-      if (props.handlers[action]) {
-        props.handlers[action](rowData)
-      } else {
-        console.warn(`No handler for action "${action}"`)
-      }
-    })
+    if (props.handlers[action]) {
+      props.handlers[action](rowData)
+    } else {
+      console.warn(`No handler for ${action}`)
+    }
+  })
 }
 
 // Watch for changes in rows and update the DataTable
