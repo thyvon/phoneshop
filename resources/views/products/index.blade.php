@@ -2,9 +2,7 @@
 @extends('layouts.main')
 
 @section('content')
-  <div id="app">
-    <product-page :page-length="{{ $pageLength ?? 20 }}" />
-  </div>
+  <product-page :page-length="{{ $pageLength ?? 20 }}" />
 @endsection
 
 @push('vite')
