@@ -136,7 +136,7 @@ const initDataTable = () => {
     $(table.value).DataTable().destroy()
   }
 
-  $(table.value).DataTable({
+  const dt = $(table.value).DataTable({
     ...props.options,
     processing: true,
     serverSide: true,
@@ -172,6 +172,7 @@ const initDataTable = () => {
     },
     columns: dtColumns.value,
     createdRow: (rowEl, rowData) => {
+      // Still add event listeners for desktop
       rowEl.querySelectorAll('[data-action]').forEach((el) => {
         el.addEventListener('click', (e) => {
           e.preventDefault()
@@ -181,6 +182,34 @@ const initDataTable = () => {
       })
     },
   })
+
+  // Fix for action buttons inside responsive (child) rows
+  $(table.value)
+    .off('click', '[data-action]')
+    .on('click', '[data-action]', function (e) {
+      e.preventDefault()
+
+      const action = this.dataset.action
+      let tr = $(this).closest('tr')
+
+      // If this is a responsive child row, get the parent row
+      if (tr.hasClass('child')) {
+        tr = tr.prev()
+      }
+
+      const rowData = dt.row(tr).data()
+
+      if (!rowData) {
+        console.warn('No row data found for clicked action')
+        return
+      }
+
+      if (props.handlers[action]) {
+        props.handlers[action](rowData)
+      } else {
+        console.warn(`No handler for action "${action}"`)
+      }
+    })
 }
 
 // Watch for changes in rows and update the DataTable
