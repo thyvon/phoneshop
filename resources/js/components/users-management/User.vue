@@ -108,20 +108,22 @@ watch(showAssignRoleModal, async (val) => {
   const $ = window.$
   if (val) {
     await nextTick()
+    // Only destroy if already initialized
+    if ($(roleSelect.value).hasClass('select2-hidden-accessible')) {
+      $(roleSelect.value).select2('destroy')
+    }
     $(roleSelect.value)
       .select2({
         placeholder: 'Select roles',
         width: '100%',
         dropdownParent: $('.modal:visible')
       })
-      .val(selectedRole.value)
-      .trigger('change')
-      .off('change')
       .on('change', function () {
         selectedRole.value = $(this).val() || []
       })
+    $(roleSelect.value).val(selectedRole.value).trigger('change')
   } else {
-    if (roleSelect.value) {
+    if (roleSelect.value && $(roleSelect.value).hasClass('select2-hidden-accessible')) {
       $(roleSelect.value).select2('destroy')
     }
   }
@@ -147,16 +149,10 @@ const openEditModal = async (user) => {
   }
 }
 
-const openAssignRoleModal = async (user) => {
+const openAssignRoleModal = (user) => {
   selectedUser.value = user
   selectedRole.value = user.roles ? user.roles.map(r => r.name) : []
   showAssignRoleModal.value = true
-  await nextTick()
-  // Ensure Select2 UI is updated with the correct value
-  const $ = window.$
-  if (roleSelect.value) {
-    $(roleSelect.value).val(selectedRole.value).trigger('change')
-  }
 }
 
 const closeAssignRoleModal = () => {
