@@ -3,7 +3,6 @@
     <div v-if="$slots['additional-header']" class="datatable-header mb-2">
       <slot name="additional-header" />
     </div>
-
     <div class="bg-white dark:bg-gray-800 p-6 rounded shadow text-gray-900 dark:text-gray-100">
       <table ref="table" class="table table-bordered w-100 table-sm">
         <thead>
@@ -22,6 +21,23 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import axios from 'axios'
 
+// Global handler for dropdown actions (works on both desktop and mobile)
+window.__datatableActionHandler = function(action, rowEncoded) {
+  const event = window.event;
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  try {
+    const rowData = JSON.parse(decodeURIComponent(rowEncoded));
+    if (window.__datatableVueHandlers && window.__datatableVueHandlers[action]) {
+      window.__datatableVueHandlers[action](rowData);
+    }
+  } catch (err) {
+    console.error('Error parsing row data:', err);
+  }
+};
+
 const props = defineProps({
   headers: Array,
   rows: Array,
@@ -31,69 +47,51 @@ const props = defineProps({
   fetchUrl: String,
   totalRecords: Number,
   fetchParams: Object,
-})
+});
 
 const emit = defineEmits([
   'sort-change',
   'page-change',
   'length-change',
   'search-change',
-])
+]);
 
-const table = ref(null)
-let dataTableInstance = null
+const table = ref(null);
+let dataTableInstance = null;
 
+// Utility functions
 const formatDate = (dateString) => {
   return dateString
     ? new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-    : ''
-}
+    : '';
+};
 
 const formatDateTime = (dateString) => {
   return dateString
     ? new Date(dateString).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })
-    : ''
-}
+    : '';
+};
 
-const dtColumns = computed(() => {
-  const cols = props.headers.map((h) => ({
-    data: h.value,
-    width: h.width || undefined,
-    render: (val) => renderColumnData(h.value, val),
-    orderable: h.sortable !== false,
-  }))
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-  if (props.actions.length) {
-    cols.push({
-      data: null,
-      orderable: false,
-      className: 'text-center',
-      width: '80px',
-      render: (row) => createActionButtons(row),
-    })
-  }
-
-  return cols
-})
-
+// Renderers
 const renderColumnData = (key, val) => {
   if (key === 'created_at') {
-    return formatDate(val)
+    return formatDate(val);
   }
   if (key === 'updated_at') {
-    return formatDateTime(val)
+    return formatDateTime(val);
   }
   if (key === 'has_variants') {
-    const badgeClass = val ? 'badge badge-success' : 'badge badge-danger'
-    const text = val ? 'Yes' : 'No'
-    return `<span class="${badgeClass} text-center">${text}</span>`
+    const badgeClass = val ? 'badge badge-success' : 'badge badge-danger';
+    const text = val ? 'Yes' : 'No';
+    return `<span class="${badgeClass} text-center">${text}</span>`;
   }
-  return val ?? ''
-}
+  return val ?? '';
+};
 
 const createActionButtons = (row) => {
-  const encodedRow = encodeURIComponent(JSON.stringify(row))
-
+  const encodedRow = encodeURIComponent(JSON.stringify(row));
   return `
     <div class="dropdown d-inline-block dropleft">
       <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-circle shadow-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -103,7 +101,7 @@ const createActionButtons = (row) => {
         ${props.actions
           .map(
             (action) => `
-              <a class="dropdown-item" href="#" data-action="${action}" data-row="${encodedRow}">
+              <a class="dropdown-item" href="#" onclick="window.__datatableActionHandler('${action}', '${encodedRow}')">
                 ${capitalize(action)}
               </a>
             `
@@ -111,25 +109,48 @@ const createActionButtons = (row) => {
           .join('')}
       </div>
     </div>
-  `
-}
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+  `;
+};
 
+// DataTable columns config
+const dtColumns = computed(() => {
+  const cols = props.headers.map((h) => ({
+    data: h.value,
+    width: h.width || undefined,
+    render: (val) => renderColumnData(h.value, val),
+    orderable: h.sortable !== false,
+  }));
+
+  if (props.actions.length) {
+    cols.push({
+      data: null,
+      orderable: false,
+      className: 'text-center',
+      width: '80px',
+      render: (row) => createActionButtons(row),
+    });
+  }
+
+  return cols;
+});
+
+// Fetch data from server
 const fetchData = async (params) => {
   try {
-    const { data } = await axios.get(props.fetchUrl, { params })
-    return data
+    const { data } = await axios.get(props.fetchUrl, { params });
+    return data;
   } catch (e) {
-    console.error('Fetch error:', e)
-    return { data: [], recordsTotal: 0, recordsFiltered: 0 }
+    console.error('Fetch error:', e);
+    return { data: [], recordsTotal: 0, recordsFiltered: 0 };
   }
-}
+};
 
+// Initialize DataTable
 const initDataTable = () => {
-  if (!window.$ || !table.value) return
+  if (!window.$ || !table.value) return;
 
   if ($.fn.DataTable.isDataTable(table.value)) {
-    $(table.value).DataTable().destroy()
+    $(table.value).DataTable().destroy();
   }
 
   dataTableInstance = $(table.value).DataTable({
@@ -137,15 +158,15 @@ const initDataTable = () => {
     processing: true,
     serverSide: true,
     ajax: async (data, callback) => {
-      const { column, dir } = data.order[0] ?? {}
-      const sortHeader = props.headers[column]
-      const sortColumn = sortHeader?.value || 'created_at'
-      const sortDirection = dir || 'asc'
+      const { column, dir } = data.order[0] ?? {};
+      const sortHeader = props.headers[column];
+      const sortColumn = sortHeader?.value || 'created_at';
+      const sortDirection = dir || 'asc';
 
-      emit('sort-change', { column: sortColumn, direction: sortDirection })
-      emit('page-change', Math.ceil(data.start / data.length) + 1)
-      emit('length-change', data.length)
-      emit('search-change', data.search.value)
+      emit('sort-change', { column: sortColumn, direction: sortDirection });
+      emit('page-change', Math.ceil(data.start / data.length) + 1);
+      emit('length-change', data.length);
+      emit('search-change', data.search.value);
 
       const params = {
         ...props.fetchParams,
@@ -154,67 +175,46 @@ const initDataTable = () => {
         sortColumn,
         sortDirection,
         search: data.search.value,
-      }
+      };
 
-      const { data: responseData, recordsTotal, recordsFiltered } = await fetchData(params)
+      const { data: responseData, recordsTotal, recordsFiltered } = await fetchData(params);
 
       callback({
         draw: data.draw,
         recordsTotal,
         recordsFiltered,
         data: responseData,
-      })
+      });
     },
     columns: dtColumns.value,
-  })
-}
+  });
+};
 
-const onActionClick = (e) => {
-  const target = e.target.closest('[data-action]')
-  if (!target) return
-
-  e.preventDefault()
-
-  const action = target.dataset.action
-  const rowEncoded = target.dataset.row
-
-  try {
-    const rowData = JSON.parse(decodeURIComponent(rowEncoded))
-    if (props.handlers[action]) {
-      props.handlers[action](rowData)
-    } else {
-      console.warn(`No handler found for action: ${action}`)
-    }
-  } catch (err) {
-    console.error('Error parsing row data:', err)
-  }
-}
-
+// Watch for row changes and update DataTable
 watch(
   () => props.rows,
   async () => {
     if (table.value && dataTableInstance) {
-      dataTableInstance.clear()
-      dataTableInstance.rows.add(props.rows)
-      dataTableInstance.draw()
+      dataTableInstance.clear();
+      dataTableInstance.rows.add(props.rows);
+      dataTableInstance.draw();
     }
   },
   { deep: true }
-)
+);
 
+// Lifecycle hooks
 onMounted(async () => {
-  await nextTick()
-  initDataTable()
-
-  // Attach event listener once on document
-  document.addEventListener('click', onActionClick)
-})
+  await nextTick();
+  initDataTable();
+  window.__datatableVueHandlers = props.handlers;
+});
 
 onUnmounted(() => {
   if (dataTableInstance) {
-    dataTableInstance.destroy(true)
-    dataTableInstance = null
+    dataTableInstance.destroy(true);
+    dataTableInstance = null;
   }
-  document.removeEventListener('click', onActionClick)
-})
+  window.__datatableVueHandlers = null;
+});
 </script>

@@ -1,9 +1,9 @@
 <template>
   <BaseModal
+    v-model="showModal"
     id="productModal"
     :title="isEditing ? 'Edit Product' : 'Create Product'"
     size="xl"
-    ref="modal"
   >
     <template #body>
       <form @submit.prevent="submitForm">
@@ -164,7 +164,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['submitted'])
 
-const modal = ref(null)
+const showModal = ref(false)
 const form = ref({ name: '', description: '', has_variants: false, price: '', stock: '', variants: [] })
 const availableAttributes = ref([])
 const selectedAttributes = ref({})
@@ -192,10 +192,12 @@ const show = async (product = null) => {
     })
   }
 
-  modal.value?.show()
+  showModal.value = true
 }
 
-const hideModal = () => modal.value?.close()
+const hideModal = () => {
+  showModal.value = false // <-- HIDE MODAL
+}
 
 const resetForm = () => {
   form.value = { name: '', description: '', has_variants: false, price: '', stock: '', variants: [] }
