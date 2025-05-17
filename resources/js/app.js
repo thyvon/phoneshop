@@ -26,6 +26,9 @@ import RolePage from './components/roles/RolePage.vue'
 import Datatable from './components/Datatable.vue'
 import ProductPage from './components/products/ProductPage.vue'
 
+//User Management
+import UserPage from './components/users-management/User.vue'
+
 // Create Vue app instance
 const app = createApp({})
 
@@ -35,6 +38,9 @@ app.component('dashboard', Dashboard)
 app.component('role-page', RolePage)
 app.component('datatable', Datatable)
 app.component('product-page', ProductPage)
+
+// User Management
+app.component('user-page', UserPage)
 
 // Mount the Vue app
 app.mount('#app')

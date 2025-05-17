@@ -21,22 +21,13 @@
               <label>Description</label>
               <textarea v-model="form.description" class="form-control" rows="3"></textarea>
             </div>
-            <div class="form-check mt-2">
-              <input
-                v-model="form.has_variants"
-                type="checkbox"
-                class="form-check-input"
-                id="hasVariants"
-              />
-              <label class="form-check-label" for="hasVariants">Has Variants</label>
-            </div>
           </div>
         </div>
 
         <!-- Attributes -->
         <div
           v-if="form.has_variants"
-          class="card border border-primary shadow-sm mb-4"
+          class="card border shadow-sm mb-4"
         >
           <div class="card-header py-2 bg-light">
             <h6 class="mb-0 font-weight-bold">Attribute Selection</h6>
@@ -80,16 +71,25 @@
         </div>
 
         <!-- Variants or Price/Stock -->
-        <div class="card border shadow-sm mb-4">
+        <div class="card shadow-sm mb-4">
           <div
             :class="[
               'card-header py-2',
-              form.has_variants ? 'bg-warning-50 text-warning' : 'bg-success-50 text-success'
+              form.has_variants ? 'bg-secondary-50' : 'bg-success-50'
             ]"
           >
             <h6 class="mb-0">
               {{ form.has_variants ? 'Variant Products' : 'Stock & Price' }}
             </h6>
+            <div class="form-check mt-2">
+              <input
+                v-model="form.has_variants"
+                type="checkbox"
+                class="form-check-input"
+                id="hasVariants"
+              />
+              <label class="form-check-label" for="hasVariants">Has Variants ?</label>
+            </div>
           </div>
           <div class="card-body">
             <template v-if="form.has_variants">
@@ -97,14 +97,14 @@
                 <table class="table table-bordered table-hover table-sm">
                   <thead class="thead-light">
                     <tr>
-                      <th>Variant</th>
+                      <th>Variant Description</th>
                       <th>Price</th>
                       <th>Stock</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(variant, index) in generatedVariants" :key="index">
-                      <td class="align-middle">{{ variant.description }}</td>
+                      <td class="align-middle">{{ form.name }}<span v-if="variant.description"> - {{ variant.description }}</span></td>
                       <td>
                         <input
                           v-model="variant.price"
@@ -185,7 +185,13 @@ const show = async (product = null) => {
       stock: product.stock ?? null,
     }
     selectedAttributes.value = getSelectedFromVariants(product.variants || [])
-    if (form.value.has_variants) generateVariants()
+    if (form.value.has_variants) {
+      generateVariants()
+    } else if (product.variants && product.variants.length > 0) {
+      // Use price/stock from first variant if exists
+      form.value.price = product.variants[0].price
+      form.value.stock = product.variants[0].stock
+    }
   } else {
     availableAttributes.value.forEach(attr => {
       if (attr.values?.length) selectedAttributes.value[attr.id] = []

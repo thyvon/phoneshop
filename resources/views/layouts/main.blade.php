@@ -36,7 +36,7 @@
     </style>
 </head>
 
-<body class="mod-skin-dark mod-nav-link">
+<body class="mod-skin-dark mod-nav-link header-function-fixed nav-function-fixed footer-function-fixed">
 <div id="preloader" style="position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 30, 45, 0.7); display: flex; align-items: center; justify-content: center;">
     <div class="spinner-border text-light" role="status">
         <span class="visually-hidden"></span>

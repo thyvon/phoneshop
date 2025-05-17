@@ -22,7 +22,7 @@ class RoleController extends Controller
     public function getRoles(Request $request)
     {
         $query = Role::query();
-    
+
         // 🔍 Global search
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -30,30 +30,30 @@ class RoleController extends Controller
                   ->orWhere('guard_name', 'like', "%{$search}%");
             });
         }
-    
+
         // ✅ Whitelisted sortable columns
         $allowedSortColumns = ['name', 'guard_name', 'created_at', 'updated_at'];
         $sortColumn = $request->get('sortColumn', 'created_at');
         $sortDirection = $request->get('sortDirection', 'desc');
-    
+
         if (!in_array($sortColumn, $allowedSortColumns)) {
             $sortColumn = 'created_at';
         }
-    
+
         if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
             $sortDirection = 'desc';
         }
-    
+
         $query->orderBy($sortColumn, $sortDirection);
-    
+
         // 📄 Pagination logic
         $limit = intval($request->get('limit', 10));
         $page = intval($request->get('page', 1));
         $offset = ($page - 1) * $limit;
-    
+
         $total = $query->count();
         $data = $query->skip($offset)->take($limit)->get();
-    
+
         return response()->json([
             'data' => $data,
             'recordsTotal' => $total,
@@ -61,7 +61,12 @@ class RoleController extends Controller
             'draw' => intval($request->get('draw', 1)),
         ]);
     }
-    
+
+    public function getRoleNames()
+    {
+        return response()->json(Role::pluck('name'));
+    }
+
 
     /**
      * Show the form for creating a new role.

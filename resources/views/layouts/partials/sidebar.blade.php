@@ -2,7 +2,7 @@
     <div class="page-logo">
         <a href="#" class="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
             <img src="{{asset ('template/img/logo.png') }}" alt="SmartAdmin WebApp" aria-roledescription="logo">
-            <span class="page-logo-text mr-1">SmartAdmin WebApp</span>
+            <span class="page-logo-text mr-1">PHONE SHOP</span>
             <span class="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
         </a>
     </div>
@@ -24,14 +24,14 @@
                         {{ auth()->user()->name}}
                     </span>
                 </a>
-                <span class="d-inline-block text-truncate text-truncate-sm">Toronto, Canada</span>
+                <span class="d-inline-block text-truncate text-truncate-sm">{{ auth()->user()->email}}</span>
             </div>
             <img src="{{asset ('template/img/card-backgrounds/cover-2-lg.png') }}" class="cover" alt="cover">
             <a href="#" onclick="return false;" class="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
                 <i class="fal fa-angle-down"></i>
             </a>
         </div>
-        <!-- 
+        <!--
         TIP: The menu items are not auto translated. You must have a residing lang file associated with the menu saved inside dist/media/data with reference to each 'data-i18n' attribute.
         -->
         <ul id="js-nav-menu" class="nav-menu">
@@ -50,7 +50,7 @@
             @endphp
             <li class="{{ $ProductActive ? 'active open' : '' }}">
                 <a href="#" title="User Management" data-filter-tags="user management">
-                    <i class="fal fa-users-cog"></i>
+                    <i class="fal fa-box"></i>
                     <span class="nav-link-text">Product Management</span>
                 </a>
                 <ul>
@@ -80,6 +80,11 @@
                     <li class="{{ request()->is('permissions*') ? 'active' : '' }}">
                         <a href="{{ route('permissions.index') }}" title="Permissions" data-filter-tags="permissions">
                             <span class="nav-link-text">Permissions</span>
+                        </a>
+                    </li>
+                    <li class="{{ request()->is('users*') ? 'active' : '' }}">
+                        <a href="{{ route('users.index') }}" title="Users" data-filter-tags="users">
+                            <span class="nav-link-text">Users</span>
                         </a>
                     </li>
                 </ul>

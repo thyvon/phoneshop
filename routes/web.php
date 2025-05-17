@@ -4,12 +4,13 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
-|---------------------------------------------------------------------- 
+|----------------------------------------------------------------------
 | Web Routes
-|---------------------------------------------------------------------- 
+|----------------------------------------------------------------------
 | Here is where you can register web routes for your application.
 | These routes are loaded by the RouteServiceProvider and all of them
 | will be assigned to the "web" middleware group. Make something great!
@@ -34,6 +35,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('permissions', PermissionController::class);
     Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
 });
 
 require __DIR__.'/auth.php';

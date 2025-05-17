@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,4 +37,9 @@ Route::middleware('auth')->group(function () {
 
     //Roles
     Route::get('/roles', [RoleController::class, 'getRoles']);
+    Route::get('/roles', [RoleController::class, 'getRoleNames']);
+
+    //Users Management
+    Route::get('/users', [UserController::class, 'getUsers']);
+    Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole']);
 });
