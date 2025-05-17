@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, defineExpose } from 'vue'
 import axios from 'axios'
 
 // Global handler for dropdown actions (works on both desktop and mobile)
@@ -40,7 +40,7 @@ window.__datatableActionHandler = function(action, rowEncoded) {
 
 const props = defineProps({
   headers: Array,
-  rows: Array,
+  rows: Array, // not used for server-side, but kept for compatibility
   actions: { type: Array, default: () => [] },
   handlers: { type: Object, default: () => ({}) },
   options: { type: Object, default: () => ({ responsive: true, pageLength: 20 }) },
@@ -190,18 +190,16 @@ const initDataTable = () => {
   });
 };
 
-// Watch for row changes and update DataTable
-watch(
-  () => props.rows,
-  async () => {
-    if (table.value && dataTableInstance) {
-      dataTableInstance.clear();
-      dataTableInstance.rows.add(props.rows);
-      dataTableInstance.draw();
+// Expose reload method for parent to refresh data
+defineExpose({
+  reload: () => {
+    if (dataTableInstance) {
+      dataTableInstance.ajax.reload(null, false); // false = keep current page
     }
-  },
-  { deep: true }
-);
+  }
+});
+
+// No watcher for rows: let DataTables handle server-side data
 
 // Lifecycle hooks
 onMounted(async () => {

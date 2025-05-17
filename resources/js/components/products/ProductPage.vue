@@ -1,11 +1,10 @@
 <template>
   <div>
     <datatable
+      ref="datatableRef"
       :headers="datatableHeaders"
       :fetch-url="datatableFetchUrl"
       :fetch-params="datatableParams"
-      :rows="products"
-      :total-records="totalRecords"
       :actions="datatableActions"
       :handlers="datatableHandlers"
       :options="datatableOptions"
@@ -22,39 +21,36 @@
     </datatable>
 
     <!-- Product Modal -->
-    <ProductModal ref="productModal" :isEditing="isEditing" @submitted="loadProducts" />
+    <ProductModal ref="productModal" :isEditing="isEditing" @submitted="reloadDatatable" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive } from 'vue'
 import axios from 'axios'
 import ProductModal from './ProductModal.vue'
-import { confirmAction, showAlert } from '@/utils/bootbox';
+import { confirmAction, showAlert } from '@/utils/bootbox'
 
 // Refs and reactive state
+const datatableRef = ref(null)
 const productModal = ref(null)
-const products = ref([])
-const totalRecords = ref(0)
-const pageLength = ref(10)
 const isEditing = ref(false)
 
+const pageLength = ref(10)
+
 const datatableParams = reactive({
-  page: 1,
-  limit: pageLength.value,
-  search: '',
+  // Add any extra filters/search here if needed
   sortColumn: 'created_at',
   sortDirection: 'desc',
 })
 
-// Derived data for the datatable component
 const datatableHeaders = [
   { text: 'Name', value: 'name', width: '20%', sortable: true },
   { text: 'Description', value: 'description', width: '30%', sortable: true },
   { text: 'Has Variants', value: 'has_variants', width: '10%', sortable: false },
   { text: 'Created', value: 'created_at', width: '20%', sortable: true },
   { text: 'Updated', value: 'updated_at', width: '20%', sortable: false }
-];
+]
 const datatableFetchUrl = '/api/products'
 const datatableActions = ['edit', 'delete', 'approve']
 const datatableOptions = {
@@ -95,13 +91,10 @@ const handleDelete = async (product) => {
 
   if (!confirmed) return
 
-  await fetchProducts()
-
   try {
     await axios.delete(`/api/products/${product.id}`)
-    products.value = products.value.filter(x => x.id !== product.id)
-
     showAlert('Deleted', `"${product.name}" was deleted successfully.`, 'success')
+    reloadDatatable()
   } catch (e) {
     console.error(e)
     showAlert('Failed to delete', e.response?.data?.message || 'Something went wrong.', 'danger')
@@ -119,33 +112,18 @@ const handleSortChange = ({ column, direction }) => {
 }
 
 const handlePageChange = (page) => {
-  datatableParams.page = page
+  // Optional: If you want to track current page for filters, etc.
+  // datatableParams.page = page
 }
 
 const handleLengthChange = (length) => {
-  datatableParams.limit = length
+  // Optional: If you want to track current length for filters, etc.
+  // datatableParams.limit = length
 }
 
 const handleSearchChange = (search) => {
   datatableParams.search = search
 }
-
-// Fetch products from the API
-const fetchProducts = async () => {
-  try {
-    const { data } = await axios.get(datatableFetchUrl, { params: datatableParams })
-    products.value = data.data
-    totalRecords.value = data.recordsTotal
-  } catch (e) {
-    console.error('Error fetching products:', e)
-  }
-}
-
-// Auto-fetch when any param changes
-watch(datatableParams, fetchProducts, { deep: true })
-
-// Lifecycle hook
-onMounted(fetchProducts)
 
 // Handlers for the datatable
 const datatableHandlers = {
@@ -154,6 +132,8 @@ const datatableHandlers = {
   approve: handleApprove,
 }
 
-// Refresh product list after modal actions
-const loadProducts = fetchProducts
+// Refresh datatable after modal actions
+const reloadDatatable = () => {
+  datatableRef.value?.reload()
+}
 </script>
