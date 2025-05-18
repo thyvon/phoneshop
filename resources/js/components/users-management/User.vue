@@ -96,7 +96,7 @@ const datatableOptions = {
 // --- Lifecycle: Fetch roles from API ---
 onMounted(async () => {
   try {
-    const res = await axios.get('/api/roles')
+    const res = await axios.get('/api/roles-name')
     availableRoles.value = res.data
   } catch (e) {
     showAlert('Failed to load roles', e.response?.data?.message || 'Could not fetch roles.', 'danger')

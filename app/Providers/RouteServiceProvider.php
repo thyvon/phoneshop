@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 
+use App\Models\Product\Product;
+
 class RouteServiceProvider extends ServiceProvider
 {
     /**
@@ -36,5 +38,7 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });
+
+        Route::model('product', \App\Models\Product\Product::class);
     }
 }

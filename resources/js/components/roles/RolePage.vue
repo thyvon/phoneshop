@@ -1,11 +1,10 @@
 <template>
   <div>
     <datatable
+      ref="datatableRef"
       :headers="datatableHeaders"
       :fetch-url="datatableFetchUrl"
       :fetch-params="datatableParams"
-      :rows="roles"
-      :total-records="totalRecords"
       :actions="datatableActions"
       :handlers="datatableHandlers"
       :options="datatableOptions"
@@ -21,21 +20,19 @@
       </template>
     </datatable>
 
-    <!-- Uncomment and implement roleModal if needed -->
-    <!-- <RoleModal ref="roleModal" :isEditing="isEditing" @submitted="loadRoles" /> -->
+    <RoleModal ref="roleModal" :isEditing="isEditing" @submitted="reloadDatatable" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive } from 'vue'
+import RoleModal from './RoleModal.vue'
 import axios from 'axios'
-// import RoleModal from './RoleModal.vue'
 
+const datatableRef = ref(null)
 const roleModal = ref(null)
-const roles = ref([])
-const totalRecords = ref(0)
-const pageLength = ref(10)
 const isEditing = ref(false)
+const pageLength = ref(10)
 
 const datatableParams = reactive({
   page: 1,
@@ -45,11 +42,11 @@ const datatableParams = reactive({
   sortDirection: 'desc',
 })
 
-// ✅ Structured headers: display text + backend key
 const datatableHeaders = [
-  { text: 'Name', value: 'name' },
-  { text: 'Guard Name', value: 'guard_name' },
-  { text: 'Created At', value: 'created_at' },
+  { text: 'Name', value: 'name', width: '30%', sortable: true },
+  { text: 'Guard Name', value: 'guard_name', width: '30%', sortable: true },
+  { text: 'Created At', value: 'created_at', width: '20%', sortable: true },
+  { text: 'Updated At', value: 'updated_at', width: '20%', sortable: true }
 ]
 
 const datatableFetchUrl = '/api/roles'
@@ -65,7 +62,7 @@ const openCreateModal = () => {
   roleModal.value?.show({ isEditing: false })
 }
 
-const openEditModal = (role) => {
+const openEditModal = async (role) => {
   isEditing.value = true
   roleModal.value?.show({ isEditing: true, ...role })
 }
@@ -76,7 +73,7 @@ const handleDelete = async (role) => {
   if (!confirm(`Delete "${role.name}"?`)) return
   try {
     await axios.delete(`/api/roles/${role.id}`)
-    roles.value = roles.value.filter(x => x.id !== role.id)
+    datatableRef.value?.reload && datatableRef.value.reload()
     alert('Deleted')
   } catch (e) {
     console.error(e)
@@ -101,23 +98,12 @@ const handleSearchChange = (search) => {
   datatableParams.search = search
 }
 
-const fetchRoles = async () => {
-  try {
-    const { data } = await axios.get(datatableFetchUrl, { params: datatableParams })
-    roles.value = data.data
-    totalRecords.value = data.recordsTotal
-  } catch (e) {
-    console.error('Error fetching roles:', e)
-  }
+const reloadDatatable = () => {
+  datatableRef.value?.reload && datatableRef.value.reload()
 }
-
-watch(datatableParams, fetchRoles, { deep: true })
-onMounted(fetchRoles)
 
 const datatableHandlers = {
   edit: handleEdit,
   delete: handleDelete,
 }
-
-const loadRoles = fetchRoles
 </script>

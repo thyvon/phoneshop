@@ -4,8 +4,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\UserController;
+use App\Models\Product\Product;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,22 +26,37 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Protected API routes using session (web guard)
 Route::middleware('auth')->group(function () {
-    Route::get('/products', [ProductController::class, 'getProducts']);
-    Route::get('/products/{id}/edit', [ProductController::class, 'edit']);
+    // Products
+    Route::get('/products', [ProductController::class, 'getProducts'])
+        ->middleware('can:viewAny,' . Product::class);
+    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])
+        ->middleware('can:edit,product');
     Route::get('/variant-values', [ProductController::class, 'getVariantValues']);
     Route::get('/attributes-values', [ProductController::class, 'getAttributes']);
-    Route::post('/products', [ProductController::class, 'store']);
-    Route::put('/products/{id}', [ProductController::class, 'update']);
-    Route::delete('/products/{id}', [ProductController::class, 'destroy']);
-    Route::post('/products/{id}/approve', [ProductController::class, 'approve']);
+    Route::post('/products', [ProductController::class, 'store'])
+        ->middleware('can:create,' . Product::class);
+    Route::put('/products/{product}', [ProductController::class, 'update'])
+        ->middleware('can:update,product');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])
+        ->middleware('can:delete,product');
+    Route::post('/products/{product}/approve', [ProductController::class, 'approve'])
+        ->middleware('can:edit,product');
 
-    //Roles
+    // Roles
     Route::get('/roles', [RoleController::class, 'getRoles']);
-    Route::get('/roles', [RoleController::class, 'getRoleNames']);
+    Route::get('/roles-name', [RoleController::class, 'getRoleNames']);
+    Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::put('/roles/{role}', [RoleController::class, 'update']);
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
 
-    //Users Management
+    // Permissions
+    Route::get('/permissions', [RoleController::class, 'getPermissions']);
+    // Or, if you have a dedicated PermissionController:
+    // Route::get('/permissions', [PermissionController::class, 'getPermissions']);
+
+    // Users Management
     Route::get('/users', [UserController::class, 'getUsers']);
     Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole']);
 });

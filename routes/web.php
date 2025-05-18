@@ -7,6 +7,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+use App\Models\Product\Product;
+
 /*
 |----------------------------------------------------------------------
 | Web Routes
@@ -38,4 +40,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/products', [ProductController::class, 'index'])
+        ->name('products.index')
+        ->middleware('can:viewAny,' . Product::class);
+});
 require __DIR__.'/auth.php';
