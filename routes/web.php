@@ -28,12 +28,48 @@ Route::get('/run-migrations', function () {
         return 'Migration failed: ' . $e->getMessage();
     }
 });
+
+// Run migrate:fresh (drops all tables and re-runs all migrations)
+Route::get('/run-migrate-fresh', function () {
+    try {
+        Artisan::call('migrate:fresh', ['--force' => true]);
+        return 'Migrate:fresh ran successfully!';
+    } catch (\Exception $e) {
+        return 'Migrate:fresh failed: ' . $e->getMessage();
+    }
+});
+
+// Run database seeder
+Route::get('/run-db-seed', function () {
+    try {
+        Artisan::call('db:seed', ['--force' => true]);
+        return 'Database seeding ran successfully!';
+    } catch (\Exception $e) {
+        return 'Database seeding failed: ' . $e->getMessage();
+    }
+});
+
+// Create storage symbolic link
 Route::get('/run-storage-link', function () {
     try {
         Artisan::call('storage:link', ['--force' => true]);
         return 'Storage link created successfully!';
     } catch (\Exception $e) {
         return 'Storage link creation failed: ' . $e->getMessage();
+    }
+});
+
+// Assign 'admin' role to user with ID 1
+Route::get('/assign-admin-role', function () {
+    try {
+        $user = \App\Models\User::find(1);
+        if (!$user) {
+            return 'User with ID 1 not found.';
+        }
+        $user->assignRole('admin');
+        return 'Admin role assigned to user 1 successfully!';
+    } catch (\Exception $e) {
+        return 'Role assignment failed: ' . $e->getMessage();
     }
 });
 
