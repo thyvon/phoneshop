@@ -165,7 +165,7 @@
           </div>
         </div>
 
-        <!-- Variants or Price/Stock -->
+        <!-- Variants Table (Always Show) -->
         <div class="card shadow-sm mb-4">
           <div
             :class="[
@@ -174,130 +174,74 @@
             ]"
           >
             <h6 class="mb-0">
-              {{ form.has_variants ? 'Variant Products' : 'Stock & Price' }}
+              Variant Products
             </h6>
-          <div class="custom-control custom-checkbox mt-2">
-          <input
-            v-model="form.has_variants"
-            type="checkbox"
-            class="custom-control-input"
-            id="hasVariants"
-            :disabled="props.isEditing && !form.has_variants"
-          />
-            <label class="custom-control-label" for="hasVariants">Has Variants ?</label>
-          </div>
+            <div class="custom-control custom-checkbox mt-2">
+              <input
+                v-model="form.has_variants"
+                type="checkbox"
+                class="custom-control-input"
+                id="hasVariants"
+                :disabled="props.isEditing && !form.has_variants"
+              />
+              <label class="custom-control-label" for="hasVariants">Has Variants ?</label>
+            </div>
           </div>
           <div class="card-body">
-            <template v-if="form.has_variants">
-              <div class="table-responsive">
-                <table class="table table-bordered table-hover table-sm">
-                  <thead class="thead-light">
-                    <tr>
-                      <th>Variant Description</th>
-                      <th>SKU</th>
-                      <th>Price</th>
-                      <th>Stock</th>
-                      <th>Purchase Price</th>
-                      <th>Margin</th>
-                      <th>Sale Price</th>
-                      <th>Image</th>
-                      <th>Active</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(variant, index) in generatedVariants" :key="index">
-                      <td class="align-middle">{{ form.name }}<span v-if="variant.description"> - {{ variant.description }}</span></td>
-                      <td>
-                        <input v-model="variant.sku" type="text" class="form-control form-control-sm" placeholder="SKU" />
-                      </td>
-                      <td>
-                        <input v-model="variant.price" type="number" class="form-control form-control-sm" placeholder="Price" />
-                      </td>
-                      <td>
-                        <input v-model="variant.stock" type="number" class="form-control form-control-sm" placeholder="Stock" />
-                      </td>
-                      <td>
-                        <input v-model="variant.default_purchase_price" type="number" class="form-control form-control-sm" placeholder="Purchase Price" />
-                      </td>
-                      <td>
-                        <input v-model="variant.default_margin" type="number" class="form-control form-control-sm" placeholder="Margin" />
-                      </td>
-                      <td>
-                        <input v-model="variant.default_sale_price" type="number" class="form-control form-control-sm" placeholder="Sale Price" />
-                      </td>
-                      <td>
-                        <input v-model="variant.image" type="text" class="form-control form-control-sm" placeholder="Image URL" />
-                      </td>
-                      <td class="text-center">
-                        <div class="custom-control custom-checkbox">
-                          <input
-                            v-model="variant.is_active"
-                            type="checkbox"
-                            class="custom-control-input"
-                            :id="`variant-active-${index}`"
-                          />
-                          <label class="custom-control-label" :for="`variant-active-${index}`"></label>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </template>
-            <template v-else>
-              <div class="table-responsive">
-                <table class="table table-bordered table-hover table-sm">
-                  <thead class="thead-light">
-                    <tr>
-                      <th>SKU</th>
-                      <th>Price</th>
-                      <th>Stock</th>
-                      <th>Purchase Price</th>
-                      <th>Margin</th>
-                      <th>Sale Price</th>
-                      <th>Image</th>
-                      <th>Active</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>
-                        <input v-model="form.sku" type="text" class="form-control form-control-sm" placeholder="SKU" />
-                      </td>
-                      <td>
-                        <input v-model="form.price" type="number" class="form-control form-control-sm" placeholder="Price" />
-                      </td>
-                      <td>
-                        <input v-model="form.stock" type="number" class="form-control form-control-sm" placeholder="Stock" />
-                      </td>
-                      <td>
-                        <input v-model="form.default_purchase_price" type="number" class="form-control form-control-sm" placeholder="Purchase Price" />
-                      </td>
-                      <td>
-                        <input v-model="form.default_margin" type="number" class="form-control form-control-sm" placeholder="Margin" />
-                      </td>
-                      <td>
-                        <input v-model="form.default_sale_price" type="number" class="form-control form-control-sm" placeholder="Sale Price" />
-                      </td>
-                      <td>
-                        <input v-model="form.image" type="text" class="form-control form-control-sm" placeholder="Image URL" />
-                      </td>
-                      <td class="text-center">
-                        <div class="custom-control custom-checkbox">
-                          <input
-                            v-model="form.is_active"
-                            type="checkbox"
-                            class="custom-control-input"
-                            id="single-active"
-                          />
-                          <label class="custom-control-label" for="single-active"></label>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </template>
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover table-sm">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Variant Description</th>
+                    <th>SKU</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Purchase Price</th>
+                    <th>Margin</th>
+                    <th>Sale Price</th>
+                    <th>Image</th>
+                    <th>Active</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(variant, index) in generatedVariants" :key="index">
+                    <td class="align-middle">{{ form.name }}<span v-if="variant.description"> - {{ variant.description }}</span></td>
+                    <td>
+                      <input v-model="variant.sku" type="text" class="form-control form-control-sm" placeholder="SKU" />
+                    </td>
+                    <td>
+                      <input v-model="variant.price" type="number" class="form-control form-control-sm" placeholder="Price" />
+                    </td>
+                    <td>
+                      <input v-model="variant.stock" type="number" class="form-control form-control-sm" placeholder="Stock" />
+                    </td>
+                    <td>
+                      <input v-model="variant.default_purchase_price" type="number" class="form-control form-control-sm" placeholder="Purchase Price" />
+                    </td>
+                    <td>
+                      <input v-model="variant.default_margin" type="number" class="form-control form-control-sm" placeholder="Margin" />
+                    </td>
+                    <td>
+                      <input v-model="variant.default_sale_price" type="number" class="form-control form-control-sm" placeholder="Sale Price" />
+                    </td>
+                    <td>
+                      <input v-model="variant.image" type="text" class="form-control form-control-sm" placeholder="Image URL" />
+                    </td>
+                    <td class="text-center">
+                      <div class="custom-control custom-checkbox">
+                        <input
+                          v-model="variant.is_active"
+                          type="checkbox"
+                          class="custom-control-input"
+                          :id="`variant-active-${index}`"
+                        />
+                        <label class="custom-control-label" :for="`variant-active-${index}`"></label>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </form>
@@ -344,8 +288,6 @@ const form = ref({
   include_tax: 0,
   is_active: true,
   has_variants: false,
-  price: '',
-  stock: '',
   variants: []
 })
 const availableAttributes = ref([])
@@ -357,6 +299,7 @@ onMounted(async () => {
   categories.value = (await axios.get('/api/categories')).data
   units.value = (await axios.get('/api/units')).data
   await loadAttributes()
+  ensureSingleVariantIfNeeded()
 })
 
 const show = async (product = null) => {
@@ -373,8 +316,6 @@ const show = async (product = null) => {
       id: product.id,
       has_variants: Boolean(product.has_variants),
       variants: product.variants || [],
-      price: product.price ?? null,
-      stock: product.stock ?? null,
       barcode: product.barcode ?? '',
       brand_id: product.brand_id ?? '',
       category_id: product.category_id ?? '',
@@ -387,29 +328,35 @@ const show = async (product = null) => {
       tax: product.tax ?? 0,
       include_tax: product.include_tax ?? 0,
       is_active: product.is_active !== undefined ? !!product.is_active : true,
-
-      default_purchase_price: '',
-      default_margin: '',
-      default_sale_price: '',
     }
     selectedAttributes.value = getSelectedFromVariants(product.variants || [])
     if (form.value.has_variants) {
       generateVariants()
     } else if (product.variants && product.variants.length > 0) {
-      const v = product.variants[0]
-      form.value.price = v.price
-      form.value.stock = v.stock
-      form.value.default_purchase_price = v.default_purchase_price
-      form.value.default_margin = v.default_margin
-      form.value.default_sale_price = v.default_sale_price
-      form.value.sku = v.sku
-      form.value.image = v.image
-      form.value.is_active = !!v.is_active
+      // Populate the single variant row with the first variant's data
+      generatedVariants.value = [
+        {
+          id: product.variants[0].id,
+          description: '',
+          sku: product.variants[0].sku || '',
+          price: product.variants[0].price || '',
+          stock: product.variants[0].stock || '',
+          default_purchase_price: product.variants[0].default_purchase_price || '',
+          default_margin: product.variants[0].default_margin || '',
+          default_sale_price: product.variants[0].default_sale_price || '',
+          image: product.variants[0].image || '',
+          is_active: product.variants[0].is_active ?? true,
+          variant_value_ids: [],
+        }
+      ]
+    } else {
+      ensureSingleVariantIfNeeded()
     }
   } else {
     availableAttributes.value.forEach(attr => {
       if (attr.values?.length) selectedAttributes.value[attr.id] = []
     })
+    ensureSingleVariantIfNeeded()
   }
 
   showModal.value = true
@@ -436,12 +383,11 @@ const resetForm = () => {
     include_tax: 0,
     is_active: true,
     has_variants: false,
-    price: '',
-    stock: '',
     variants: []
   }
   selectedAttributes.value = {}
   generatedVariants.value = []
+  ensureSingleVariantIfNeeded()
 }
 
 const loadAttributes = async () => {
@@ -518,6 +464,41 @@ const generateVariants = () => {
   })
 }
 
+// Always ensure at least one variant row if not using variants
+const ensureSingleVariantIfNeeded = () => {
+  if (!form.value.has_variants) {
+    if (
+      !generatedVariants.value.length ||
+      generatedVariants.value.length > 1
+    ) {
+      generatedVariants.value = [
+        {
+          description: '',
+          sku: '',
+          price: '',
+          stock: '',
+          default_purchase_price: '',
+          default_margin: '',
+          default_sale_price: '',
+          image: '',
+          is_active: true,
+          variant_value_ids: [],
+        }
+      ]
+    }
+  }
+}
+
+// Watch for has_variants toggle to update variant rows
+watch(() => form.value.has_variants, (newVal) => {
+  if (newVal) {
+    generateVariants()
+  } else {
+    ensureSingleVariantIfNeeded()
+  }
+})
+
+// Watch for attribute changes to regenerate variants
 watch(() => selectedAttributes.value, () => {
   if (form.value.has_variants) generateVariants()
 }, { deep: true })
@@ -530,7 +511,7 @@ const submitForm = async () => {
       : '/api/products'
     const payload = {
       ...form.value,
-      variants: form.value.has_variants ? generatedVariants.value : []
+      variants: generatedVariants.value
     }
     await axios[method](url, payload)
     emit('submitted')

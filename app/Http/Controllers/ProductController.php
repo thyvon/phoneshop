@@ -83,11 +83,11 @@ class ProductController extends Controller
             'tax' => 'nullable|numeric',
             'include_tax' => 'nullable|integer',
             'is_active' => 'boolean',
-            'price' => 'nullable|numeric|required_if:has_variants,false',
-            'stock' => 'nullable|numeric|required_if:has_variants,false',
-            'default_purchase_price' => 'nullable|numeric|required_if:has_variants,false',
-            'default_sale_price' => 'nullable|numeric|required_if:has_variants,false',
-            'default_margin' => 'nullable|numeric|required_if:has_variants,false',
+            // 'price' => 'nullable|numeric|required_if:has_variants,false',
+            // 'stock' => 'nullable|numeric|required_if:has_variants,false',
+            // 'default_purchase_price' => 'nullable|numeric|required_if:has_variants,false',
+            // 'default_sale_price' => 'nullable|numeric|required_if:has_variants,false',
+            // 'default_margin' => 'nullable|numeric|required_if:has_variants,false',
             'variants' => 'array|nullable',
             'variants.*.id' => 'nullable|exists:product_variants,id',
             'variants.*.sku' => [
@@ -105,14 +105,14 @@ class ProductController extends Controller
                     }
                 }
             ],
-            'variants.*.description' => 'required_if:has_variants,true|string',
-            'variants.*.price' => 'required_if:has_variants,true|numeric',
-            'variants.*.stock' => 'required_if:has_variants,true|numeric',
+            // 'variants.*.description' => 'required_if:has_variants,true|string',
+            'variants.*.price' => 'required|numeric',
+            'variants.*.stock' => 'required|numeric',
             'variants.*.default_purchase_price' => 'nullable|numeric',
             'variants.*.default_sale_price' => 'nullable|numeric',
             'variants.*.default_margin' => 'nullable|numeric',
             'variants.*.image' => 'nullable|string|max:255',
-            'variants.*.variant_value_ids' => 'required_with:variants|array|min:1',
+            'variants.*.variant_value_ids' => 'array',
             'variants.*.variant_value_ids.*' => 'exists:variant_values,id',
             'variants.*.is_active' => 'boolean',
         ];
@@ -160,7 +160,7 @@ class ProductController extends Controller
                     $variantSku = $variant['sku'] ?? $this->generateVariantSku($baseSku, $index + 1);
                     $createdVariant = $product->variants()->create([
                         'sku' => $variantSku,
-                        'description' => $variant['description'],
+                        'description' => $variant['description'] ?? null,
                         'price' => $variant['price'],
                         'stock' => $variant['stock'],
                         'default_purchase_price' => $variant['default_purchase_price'] ?? null,
@@ -170,23 +170,25 @@ class ProductController extends Controller
                         'is_active' => $variant['is_active'] ?? true,
                     ]);
 
-                    $createdVariant->values()->attach($variant['variant_value_ids']);
-                    Log::info('Variant values attached', ['variant_id' => $createdVariant->id, 'variant_value_ids' => $variant['variant_value_ids']]);
+                    $createdVariant->values()->attach($variant['variant_value_ids'] ?? []);
+                    Log::info('Variant values attached', ['variant_id' => $createdVariant->id, 'variant_value_ids' => $variant['variant_value_ids'] ?? []]);
                 }
             } else {
-                $variantSku = $validated['sku'] ?? $this->generateVariantSku($baseSku, 1);
+                // Always use the first variant in the array for single product input
+                $variant = $validated['variants'][0];
+                $variantSku = $variant['sku'] ?? $this->generateVariantSku($baseSku, 1);
                 Log::info('Generated default variant SKU', ['variantSku' => $variantSku]);
 
                 $product->variants()->create([
                     'sku' => $variantSku,
-                    'description' => 'Default',
-                    'price' => $validated['price'],
-                    'stock' => $validated['stock'],
-                    'default_purchase_price' => $validated['default_purchase_price'] ?? null,
-                    'default_sale_price' => $validated['default_sale_price'] ?? null,
-                    'default_margin' => $validated['default_margin'] ?? null,
-                    'image' => $validated['image'] ?? null,
-                    'is_active' => $validated['is_active'] ?? true,
+                    'description' => $variant['description'] ?? 'Default',
+                    'price' => $variant['price'],
+                    'stock' => $variant['stock'],
+                    'default_purchase_price' => $variant['default_purchase_price'] ?? null,
+                    'default_sale_price' => $variant['default_sale_price'] ?? null,
+                    'default_margin' => $variant['default_margin'] ?? null,
+                    'image' => $variant['image'] ?? null,
+                    'is_active' => $variant['is_active'] ?? true,
                 ]);
             }
 
@@ -281,7 +283,7 @@ class ProductController extends Controller
                         $variant = ProductVariant::findOrFail($variantData['id']);
                         $variant->update([
                             'sku' => $variantData['sku'] ?? $variant->sku,
-                            'description' => $variantData['description'],
+                            'description' => $variantData['description'] ?? $variant->description,
                             'price' => $variantData['price'],
                             'stock' => $variantData['stock'],
                             'default_purchase_price' => $variantData['default_purchase_price'] ?? $variant->default_purchase_price,
@@ -290,12 +292,12 @@ class ProductController extends Controller
                             'image' => $variantData['image'] ?? $variant->image,
                             'is_active' => $variantData['is_active'] ?? $variant->is_active,
                         ]);
-                        $variant->values()->sync($variantData['variant_value_ids']);
+                        $variant->values()->sync($variantData['variant_value_ids'] ?? []);
                     } else {
                         $variantSku = $variantData['sku'] ?? $this->generateVariantSku($product->sku, $index + 1);
                         $newVariant = $product->variants()->create([
                             'sku' => $variantSku,
-                            'description' => $variantData['description'],
+                            'description' => $variantData['description'] ?? null,
                             'price' => $variantData['price'],
                             'stock' => $variantData['stock'],
                             'default_purchase_price' => $variantData['default_purchase_price'] ?? null,
@@ -304,27 +306,30 @@ class ProductController extends Controller
                             'image' => $variantData['image'] ?? null,
                             'is_active' => $variantData['is_active'] ?? true,
                         ]);
-                        $newVariant->values()->attach($variantData['variant_value_ids']);
+                        $newVariant->values()->attach($variantData['variant_value_ids'] ?? []);
                     }
                 }
             } else {
+                // Remove all old variants
                 foreach ($product->variants as $variant) {
                     $variant->values()->detach();
                     $variant->forceDelete(); // Hard delete to free up SKU
                 }
 
-                $variantSku = $this->generateVariantSku($product->sku, 1);
+                // Always use the first variant in the array for single product input
+                $variant = $validated['variants'][0];
+                $variantSku = $variant['sku'] ?? $this->generateVariantSku($product->sku, 1);
 
                 $product->variants()->create([
                     'sku' => $variantSku,
-                    'description' => 'Default',
-                    'price' => $validated['price'],
-                    'stock' => $validated['stock'],
-                    'default_purchase_price' => $validated['default_purchase_price'] ?? null,
-                    'default_sale_price' => $validated['default_sale_price'] ?? null,
-                    'default_margin' => $validated['default_margin'] ?? null,
-                    'image' => $validated['image'] ?? null,
-                    'is_active' => $validated['is_active'] ?? true,
+                    'description' => $variant['description'] ?? 'Default',
+                    'price' => $variant['price'],
+                    'stock' => $variant['stock'],
+                    'default_purchase_price' => $variant['default_purchase_price'] ?? null,
+                    'default_sale_price' => $variant['default_sale_price'] ?? null,
+                    'default_margin' => $variant['default_margin'] ?? null,
+                    'image' => $variant['image'] ?? null,
+                    'is_active' => $variant['is_active'] ?? true,
                 ]);
             }
 
