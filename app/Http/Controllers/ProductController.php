@@ -6,6 +6,9 @@ use App\Models\Product\Product;
 use App\Models\Product\ProductVariant;
 use App\Models\Product\VariantValue;
 use App\Models\Product\VariantAttribute;
+use App\Models\Product\Brand;
+use App\Models\Product\Category;
+use App\Models\Product\Unit;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -58,66 +61,132 @@ class ProductController extends Controller
         ]);
     }
 
+    private function productValidationRules($productId = null, $variantIds = [])
+    {
+        return [
+            'sku' => [
+                'nullable',
+                'unique:products,sku' . ($productId ? ',' . $productId : ''),
+            ],
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'has_variants' => 'boolean',
+            'barcode' => 'nullable|string|max:255',
+            'brand_id' => 'nullable|exists:brands,id',
+            'category_id' => 'nullable|exists:categories,id',
+            'unit_id' => 'nullable|exists:units,id',
+            'manage_stock' => 'boolean',
+            'alert_qty' => 'nullable|numeric',
+            'image' => 'nullable|string|max:255',
+            'not_sale' => 'boolean',
+            'serial_des' => 'boolean',
+            'tax' => 'nullable|numeric',
+            'include_tax' => 'nullable|integer',
+            'is_active' => 'boolean',
+            'price' => 'nullable|numeric|required_if:has_variants,false',
+            'stock' => 'nullable|numeric|required_if:has_variants,false',
+            'default_purchase_price' => 'nullable|numeric|required_if:has_variants,false',
+            'default_sale_price' => 'nullable|numeric|required_if:has_variants,false',
+            'default_margin' => 'nullable|numeric|required_if:has_variants,false',
+            'variants' => 'array|nullable',
+            'variants.*.id' => 'nullable|exists:product_variants,id',
+            'variants.*.sku' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) use ($variantIds) {
+                    $index = (int)explode('.', $attribute)[1];
+                    $variantId = $variantIds[$index] ?? null;
+                    $query = \App\Models\Product\ProductVariant::where('sku', $value);
+                    if ($variantId) {
+                        $query->where('id', '!=', $variantId);
+                    }
+                    if ($query->exists()) {
+                        $fail('The SKU has already been taken.');
+                    }
+                }
+            ],
+            'variants.*.description' => 'required_if:has_variants,true|string',
+            'variants.*.price' => 'required_if:has_variants,true|numeric',
+            'variants.*.stock' => 'required_if:has_variants,true|numeric',
+            'variants.*.default_purchase_price' => 'nullable|numeric',
+            'variants.*.default_sale_price' => 'nullable|numeric',
+            'variants.*.default_margin' => 'nullable|numeric',
+            'variants.*.image' => 'nullable|string|max:255',
+            'variants.*.variant_value_ids' => 'required_with:variants|array|min:1',
+            'variants.*.variant_value_ids.*' => 'exists:variant_values,id',
+            'variants.*.is_active' => 'boolean',
+        ];
+    }
+
     public function store(Request $request)
     {
         $this->authorize('create', Product::class);
 
-        $validated = $request->validate([
-            'sku' => 'nullable|unique:products,sku',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'has_variants' => 'boolean',
-            'price' => 'nullable|numeric|required_if:has_variants,false',
-            'stock' => 'nullable|integer|required_if:has_variants,false',
-            'variants' => 'array|nullable',
-            'variants.*.description' => 'required_if:has_variants,true|string',
-            'variants.*.price' => 'required_if:has_variants,true|numeric',
-            'variants.*.stock' => 'required_if:has_variants,true|integer',
-            'variants.*.variant_value_ids' => 'required_with:variants|array|min:1',
-            'variants.*.variant_value_ids.*' => 'exists:variant_values,id',
-        ]);
+        $validated = $request->validate($this->productValidationRules());
 
         Log::info('Product creation request', ['request' => $validated]);
 
         DB::beginTransaction();
 
         try {
-            $baseSku = $this->generateBaseSku();
-            Log::info('Generated base SKU', ['baseSku' => $baseSku]);
+            // Use input SKU if provided, otherwise generate
+            $baseSku = $validated['sku'] ?? $this->generateBaseSku();
+            Log::info('Base SKU used', ['baseSku' => $baseSku]);
 
             $product = Product::create([
+                'sku' => $baseSku,
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
                 'has_variants' => $validated['has_variants'],
-                'sku' => $baseSku,
+                'barcode' => $validated['barcode'] ?? null,
+                'brand_id' => $validated['brand_id'] ?? null,
+                'category_id' => $validated['category_id'] ?? null,
+                'unit_id' => $validated['unit_id'] ?? null,
+                'manage_stock' => $validated['manage_stock'] ?? true,
+                'alert_qty' => $validated['alert_qty'] ?? 0,
+                'image' => $validated['image'] ?? null,
+                'not_sale' => $validated['not_sale'] ?? false,
+                'serial_des' => $validated['serial_des'] ?? false,
+                'tax' => $validated['tax'] ?? 0,
+                'include_tax' => $validated['include_tax'] ?? 0,
+                'is_active' => $validated['is_active'] ?? true,
+                'created_by' => auth()->id(),
             ]);
 
             Log::info('Product created successfully', ['product_id' => $product->id, 'sku' => $product->sku]);
 
             if ($validated['has_variants']) {
                 foreach ($validated['variants'] as $index => $variant) {
-                    $variantSku = $this->generateVariantSku($baseSku, $index + 1);
-                    Log::info('Generated variant SKU', ['variantSku' => $variantSku, 'variant_index' => $index + 1]);
-
+                    $variantSku = $variant['sku'] ?? $this->generateVariantSku($baseSku, $index + 1);
                     $createdVariant = $product->variants()->create([
+                        'sku' => $variantSku,
                         'description' => $variant['description'],
                         'price' => $variant['price'],
                         'stock' => $variant['stock'],
-                        'sku' => $variantSku,
+                        'default_purchase_price' => $variant['default_purchase_price'] ?? null,
+                        'default_sale_price' => $variant['default_sale_price'] ?? null,
+                        'default_margin' => $variant['default_margin'] ?? null,
+                        'image' => $variant['image'] ?? null,
+                        'is_active' => $variant['is_active'] ?? true,
                     ]);
 
                     $createdVariant->values()->attach($variant['variant_value_ids']);
                     Log::info('Variant values attached', ['variant_id' => $createdVariant->id, 'variant_value_ids' => $variant['variant_value_ids']]);
                 }
             } else {
-                $variantSku = $this->generateVariantSku($baseSku, 1);
+                $variantSku = $validated['sku'] ?? $this->generateVariantSku($baseSku, 1);
                 Log::info('Generated default variant SKU', ['variantSku' => $variantSku]);
 
                 $product->variants()->create([
+                    'sku' => $variantSku,
                     'description' => 'Default',
                     'price' => $validated['price'],
                     'stock' => $validated['stock'],
-                    'sku' => $variantSku,
+                    'default_purchase_price' => $validated['default_purchase_price'] ?? null,
+                    'default_sale_price' => $validated['default_sale_price'] ?? null,
+                    'default_margin' => $validated['default_margin'] ?? null,
+                    'image' => $validated['image'] ?? null,
+                    'is_active' => $validated['is_active'] ?? true,
                 ]);
             }
 
@@ -142,7 +211,6 @@ class ProductController extends Controller
         }
     }
 
-    // Use route model binding for all resource methods
     public function edit(Product $product)
     {
         $this->authorize('edit', $product);
@@ -169,21 +237,14 @@ class ProductController extends Controller
     {
         $this->authorize('update', $product);
 
-        $validated = $request->validate([
-            'sku' => 'nullable|unique:products,sku,' . $product->id,
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'has_variants' => 'boolean',
-            'price' => 'nullable|numeric|required_if:has_variants,false',
-            'stock' => 'nullable|integer|required_if:has_variants,false',
-            'variants' => 'array|nullable',
-            'variants.*.id' => 'nullable|exists:product_variants,id',
-            'variants.*.description' => 'required_if:has_variants,true|string',
-            'variants.*.price' => 'required_if:has_variants,true|numeric',
-            'variants.*.stock' => 'required_if:has_variants,true|integer',
-            'variants.*.variant_value_ids' => 'required_with:variants|array|min:1',
-            'variants.*.variant_value_ids.*' => 'exists:variant_values,id',
-        ]);
+        $variantIds = [];
+        if ($request->has('variants')) {
+            foreach ($request->input('variants') as $i => $variant) {
+                $variantIds[$i] = $variant['id'] ?? null;
+            }
+        }
+
+        $validated = $request->validate($this->productValidationRules($product->id, $variantIds));
 
         DB::beginTransaction();
 
@@ -192,6 +253,19 @@ class ProductController extends Controller
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
                 'has_variants' => $validated['has_variants'],
+                'barcode' => $validated['barcode'] ?? null,
+                'brand_id' => $validated['brand_id'] ?? null,
+                'category_id' => $validated['category_id'] ?? null,
+                'unit_id' => $validated['unit_id'] ?? null,
+                'manage_stock' => $validated['manage_stock'] ?? true,
+                'alert_qty' => $validated['alert_qty'] ?? 0,
+                'image' => $validated['image'] ?? null,
+                'not_sale' => $validated['not_sale'] ?? false,
+                'serial_des' => $validated['serial_des'] ?? false,
+                'tax' => $validated['tax'] ?? 0,
+                'include_tax' => $validated['include_tax'] ?? 0,
+                'is_active' => $validated['is_active'] ?? true,
+                'updated_by' => auth()->id(),
             ]);
 
             if ($validated['has_variants']) {
@@ -199,25 +273,36 @@ class ProductController extends Controller
 
                 $product->variants()->whereNotIn('id', $requestVariantIds)->each(function ($variant) {
                     $variant->values()->detach();
-                    $variant->delete();
+                    $variant->forceDelete(); // Use forceDelete to avoid soft-deleted SKU conflicts
                 });
 
                 foreach ($validated['variants'] as $index => $variantData) {
                     if (!empty($variantData['id'])) {
                         $variant = ProductVariant::findOrFail($variantData['id']);
                         $variant->update([
+                            'sku' => $variantData['sku'] ?? $variant->sku,
                             'description' => $variantData['description'],
                             'price' => $variantData['price'],
                             'stock' => $variantData['stock'],
+                            'default_purchase_price' => $variantData['default_purchase_price'] ?? $variant->default_purchase_price,
+                            'default_sale_price' => $variantData['default_sale_price'] ?? $variant->default_sale_price,
+                            'default_margin' => $variantData['default_margin'] ?? $variant->default_margin,
+                            'image' => $variantData['image'] ?? $variant->image,
+                            'is_active' => $variantData['is_active'] ?? $variant->is_active,
                         ]);
                         $variant->values()->sync($variantData['variant_value_ids']);
                     } else {
-                        $variantSku = $this->generateVariantSku($product->sku, $index + 1);
+                        $variantSku = $variantData['sku'] ?? $this->generateVariantSku($product->sku, $index + 1);
                         $newVariant = $product->variants()->create([
+                            'sku' => $variantSku,
                             'description' => $variantData['description'],
                             'price' => $variantData['price'],
                             'stock' => $variantData['stock'],
-                            'sku' => $variantSku,
+                            'default_purchase_price' => $variantData['default_purchase_price'] ?? null,
+                            'default_sale_price' => $variantData['default_sale_price'] ?? null,
+                            'default_margin' => $variantData['default_margin'] ?? null,
+                            'image' => $variantData['image'] ?? null,
+                            'is_active' => $variantData['is_active'] ?? true,
                         ]);
                         $newVariant->values()->attach($variantData['variant_value_ids']);
                     }
@@ -225,16 +310,21 @@ class ProductController extends Controller
             } else {
                 foreach ($product->variants as $variant) {
                     $variant->values()->detach();
-                    $variant->delete();
+                    $variant->forceDelete(); // Hard delete to free up SKU
                 }
 
                 $variantSku = $this->generateVariantSku($product->sku, 1);
 
                 $product->variants()->create([
+                    'sku' => $variantSku,
                     'description' => 'Default',
                     'price' => $validated['price'],
                     'stock' => $validated['stock'],
-                    'sku' => $variantSku,
+                    'default_purchase_price' => $validated['default_purchase_price'] ?? null,
+                    'default_sale_price' => $validated['default_sale_price'] ?? null,
+                    'default_margin' => $validated['default_margin'] ?? null,
+                    'image' => $validated['image'] ?? null,
+                    'is_active' => $validated['is_active'] ?? true,
                 ]);
             }
 
@@ -318,5 +408,21 @@ class ProductController extends Controller
     {
         // Optionally add policy here if needed
         return VariantAttribute::with('values')->get();
+    }
+
+    public function getBrands()
+    {
+        // Optionally add policy here if needed
+        return Brand::select('id', 'name', 'code', 'description', 'is_active')->get();
+    }
+    public function getCategories()
+    {
+        // Optionally add policy here if needed
+        return Category::with('children')->select('id', 'name', 'code', 'description', 'is_active', 'sub_taxonomy', 'parent_id')->get();
+    }
+    public function getUnits()
+    {
+        // Optionally add policy here if needed
+        return Unit::select('id', 'name', 'short_name', 'allow_decimal', 'is_active')->get();
     }
 }

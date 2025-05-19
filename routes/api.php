@@ -42,6 +42,12 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:delete,product');
     Route::post('/products/{product}/approve', [ProductController::class, 'approve'])
         ->middleware('can:edit,product');
+    
+    Route::get('/brands', [ProductController::class, 'getBrands']);
+    Route::get('/categories', [ProductController::class, 'getCategories']);
+    Route::get('/units', [ProductController::class, 'getUnits']);
+    
+    //Product
 
     // Roles
     Route::get('/roles', [RoleController::class, 'getRoles']);

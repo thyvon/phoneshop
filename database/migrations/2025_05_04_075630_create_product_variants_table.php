@@ -16,7 +16,12 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->string('sku')->unique();
             $table->decimal('price', 10, 2);
-            $table->integer('stock')->default(0);
+            $table->decimal('stock')->default(0);
+            $table->decimal('default_purchase_price', 10, 2)->nullable();
+            $table->decimal('default_sale_price', 10, 2)->nullable();
+            $table->decimal('default_margin', 10, 2)->nullable();
+            $table->string('image')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
