@@ -6,6 +6,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 
 use App\Models\Product\Product;
 
@@ -18,6 +19,23 @@ use App\Models\Product\Product;
 | will be assigned to the "web" middleware group. Make something great!
 |
 */
+
+Route::get('/run-migrations', function () {
+    try {
+        Artisan::call('migrate', ['--force' => true]);
+        return 'Migrations ran successfully!';
+    } catch (\Exception $e) {
+        return 'Migration failed: ' . $e->getMessage();
+    }
+});
+Route::get('/run-storage-link', function () {
+    try {
+        Artisan::call('storage:link', ['--force' => true]);
+        return 'Storage link created successfully!';
+    } catch (\Exception $e) {
+        return 'Storage link creation failed: ' . $e->getMessage();
+    }
+});
 
 // Home Route - Choose one (Dashboard or Welcome)
 Route::get('/', function () {
