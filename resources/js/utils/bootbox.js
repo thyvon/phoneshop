@@ -35,11 +35,15 @@ export const showAlert = (title, message, type = 'success') => {
     info: 'fa-info-circle text-info'
   }
 
-  bootbox.alert({
+  const dialog = bootbox.alert({
     title: `<i class='fal ${icons[type] || icons.info} mr-2'></i> <span class='text-${type} fw-500'>${title}</span>`,
     message: `<span>${message}</span>`,
     centerVertical: true,
     className: 'modal-alert',
     closeButton: false
   })
+
+  setTimeout(() => {
+    dialog.modal('hide')
+  }, 2000) // Auto-close after 2 seconds
 }

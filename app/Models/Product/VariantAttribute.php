@@ -9,7 +9,7 @@ class VariantAttribute extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'ordinal'];
 
     public function values()
     {

@@ -118,20 +118,17 @@ class ProductController extends Controller
         ];
     }
 
+
     public function store(Request $request)
     {
         $this->authorize('create', Product::class);
 
         $validated = $request->validate($this->productValidationRules());
 
-        Log::info('Product creation request', ['request' => $validated]);
-
         DB::beginTransaction();
 
         try {
-            // Use input SKU if provided, otherwise generate
             $baseSku = $validated['sku'] ?? $this->generateBaseSku();
-            Log::info('Base SKU used', ['baseSku' => $baseSku]);
 
             $product = Product::create([
                 'sku' => $baseSku,
@@ -153,59 +150,34 @@ class ProductController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            Log::info('Product created successfully', ['product_id' => $product->id, 'sku' => $product->sku]);
-
-            if ($validated['has_variants']) {
-                foreach ($validated['variants'] as $index => $variant) {
-                    $variantSku = $variant['sku'] ?? $this->generateVariantSku($baseSku, $index + 1);
-                    $createdVariant = $product->variants()->create([
-                        'sku' => $variantSku,
-                        'description' => $variant['description'] ?? null,
-                        'price' => $variant['price'],
-                        'stock' => $variant['stock'],
-                        'default_purchase_price' => $variant['default_purchase_price'] ?? null,
-                        'default_sale_price' => $variant['default_sale_price'] ?? null,
-                        'default_margin' => $variant['default_margin'] ?? null,
-                        'image' => $variant['image'] ?? null,
-                        'is_active' => $variant['is_active'] ?? true,
-                    ]);
-
-                    $createdVariant->values()->attach($variant['variant_value_ids'] ?? []);
-                    Log::info('Variant values attached', ['variant_id' => $createdVariant->id, 'variant_value_ids' => $variant['variant_value_ids'] ?? []]);
-                }
-            } else {
-                // Always use the first variant in the array for single product input
-                $variant = $validated['variants'][0];
-                $variantSku = $variant['sku'] ?? $this->generateVariantSku($baseSku, 1);
-                Log::info('Generated default variant SKU', ['variantSku' => $variantSku]);
-
-                $product->variants()->create([
+            foreach ($validated['variants'] as $index => $variant) {
+                $variantSku = $variant['sku'] ?? $this->generateVariantSku($baseSku, $index + 1);
+                $createdVariant = $product->variants()->create([
                     'sku' => $variantSku,
-                    'description' => $variant['description'] ?? 'Default',
+                    'description' => $variant['description'] ?? null,
                     'price' => $variant['price'],
                     'stock' => $variant['stock'],
                     'default_purchase_price' => $variant['default_purchase_price'] ?? null,
                     'default_sale_price' => $variant['default_sale_price'] ?? null,
                     'default_margin' => $variant['default_margin'] ?? null,
                     'image' => $variant['image'] ?? null,
-                    'is_active' => $variant['is_active'] ?? true,
+                    'is_active' => array_key_exists('is_active', $variant) ? $variant['is_active'] : true,
                 ]);
+                $createdVariant->values()->attach($variant['variant_value_ids'] ?? []);
             }
 
             DB::commit();
-
-            Log::info('Product and variants created successfully', ['product_id' => $product->id]);
 
             return response()->json(['message' => 'Product created successfully'], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Error creating product', [
+            // Add error log here
+            \Log::error('Error creating product', [
                 'error_message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString()
+                'stack_trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
             ]);
-
             return response()->json([
                 'message' => 'Failed to create product',
                 'error' => $e->getMessage(),
@@ -270,67 +242,43 @@ class ProductController extends Controller
                 'updated_by' => auth()->id(),
             ]);
 
-            if ($validated['has_variants']) {
-                $requestVariantIds = collect($validated['variants'])->pluck('id')->filter()->all();
+            // Remove variants not present in the request
+            $requestVariantIds = collect($validated['variants'])->pluck('id')->filter()->all();
+            $product->variants()->whereNotIn('id', $requestVariantIds)->each(function ($variant) {
+                $variant->values()->detach();
+                $variant->delete(); // Soft delete
+            });
 
-                $product->variants()->whereNotIn('id', $requestVariantIds)->each(function ($variant) {
-                    $variant->values()->detach();
-                    $variant->forceDelete(); // Use forceDelete to avoid soft-deleted SKU conflicts
-                });
-
-                foreach ($validated['variants'] as $index => $variantData) {
-                    if (!empty($variantData['id'])) {
-                        $variant = ProductVariant::findOrFail($variantData['id']);
-                        $variant->update([
-                            'sku' => $variantData['sku'] ?? $variant->sku,
-                            'description' => $variantData['description'] ?? $variant->description,
-                            'price' => $variantData['price'],
-                            'stock' => $variantData['stock'],
-                            'default_purchase_price' => $variantData['default_purchase_price'] ?? $variant->default_purchase_price,
-                            'default_sale_price' => $variantData['default_sale_price'] ?? $variant->default_sale_price,
-                            'default_margin' => $variantData['default_margin'] ?? $variant->default_margin,
-                            'image' => $variantData['image'] ?? $variant->image,
-                            'is_active' => $variantData['is_active'] ?? $variant->is_active,
-                        ]);
-                        $variant->values()->sync($variantData['variant_value_ids'] ?? []);
-                    } else {
-                        $variantSku = $variantData['sku'] ?? $this->generateVariantSku($product->sku, $index + 1);
-                        $newVariant = $product->variants()->create([
-                            'sku' => $variantSku,
-                            'description' => $variantData['description'] ?? null,
-                            'price' => $variantData['price'],
-                            'stock' => $variantData['stock'],
-                            'default_purchase_price' => $variantData['default_purchase_price'] ?? null,
-                            'default_sale_price' => $variantData['default_sale_price'] ?? null,
-                            'default_margin' => $variantData['default_margin'] ?? null,
-                            'image' => $variantData['image'] ?? null,
-                            'is_active' => $variantData['is_active'] ?? true,
-                        ]);
-                        $newVariant->values()->attach($variantData['variant_value_ids'] ?? []);
-                    }
+            foreach ($validated['variants'] as $index => $variantData) {
+                if (!empty($variantData['id'])) {
+                    $variant = ProductVariant::findOrFail($variantData['id']);
+                    $variant->update([
+                        'sku' => $variantData['sku'] ?? $variant->sku,
+                        'description' => $variantData['description'] ?? $variant->description,
+                        'price' => $variantData['price'],
+                        'stock' => $variantData['stock'],
+                        'default_purchase_price' => $variantData['default_purchase_price'] ?? $variant->default_purchase_price,
+                        'default_sale_price' => $variantData['default_sale_price'] ?? $variant->default_sale_price,
+                        'default_margin' => $variantData['default_margin'] ?? $variant->default_margin,
+                        'image' => $variantData['image'] ?? $variant->image,
+                        'is_active' => array_key_exists('is_active', $variantData) ? $variantData['is_active'] : $variant->is_active,
+                    ]);
+                    $variant->values()->sync($variantData['variant_value_ids'] ?? []);
+                } else {
+                    $variantSku = $variantData['sku'] ?? $this->generateVariantSku($product->sku, $index + 1);
+                    $newVariant = $product->variants()->create([
+                        'sku' => $variantSku,
+                        'description' => $variantData['description'] ?? null,
+                        'price' => $variantData['price'],
+                        'stock' => $variantData['stock'],
+                        'default_purchase_price' => $variantData['default_purchase_price'] ?? null,
+                        'default_sale_price' => $variantData['default_sale_price'] ?? null,
+                        'default_margin' => $variantData['default_margin'] ?? null,
+                        'image' => $variantData['image'] ?? null,
+                        'is_active' => array_key_exists('is_active', $variantData) ? $variantData['is_active'] : true,
+                    ]);
+                    $newVariant->values()->attach($variantData['variant_value_ids'] ?? []);
                 }
-            } else {
-                // Remove all old variants
-                foreach ($product->variants as $variant) {
-                    $variant->values()->detach();
-                    $variant->forceDelete(); // Hard delete to free up SKU
-                }
-
-                // Always use the first variant in the array for single product input
-                $variant = $validated['variants'][0];
-                $variantSku = $variant['sku'] ?? $this->generateVariantSku($product->sku, 1);
-
-                $product->variants()->create([
-                    'sku' => $variantSku,
-                    'description' => $variant['description'] ?? 'Default',
-                    'price' => $variant['price'],
-                    'stock' => $variant['stock'],
-                    'default_purchase_price' => $variant['default_purchase_price'] ?? null,
-                    'default_sale_price' => $variant['default_sale_price'] ?? null,
-                    'default_margin' => $variant['default_margin'] ?? null,
-                    'image' => $variant['image'] ?? null,
-                    'is_active' => $variant['is_active'] ?? true,
-                ]);
             }
 
             DB::commit();
@@ -339,12 +287,6 @@ class ProductController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Error updating product', [
-                'error_message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'message' => 'Failed to update product',
                 'error' => $e->getMessage(),
@@ -392,15 +334,27 @@ class ProductController extends Controller
 
     protected function generateBaseSku()
     {
-        $lastProduct = Product::orderBy('id', 'desc')->first();
-        $nextNumber = $lastProduct ? $lastProduct->id + 1 : 1;
+        $nextNumber = 1;
+        do {
+            $sku = 'SKU-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            $exists = Product::withTrashed()->where('sku', $sku)->exists();
+            $nextNumber++;
+        } while ($exists);
 
-        return 'SKU-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        return $sku;
     }
 
     protected function generateVariantSku($baseSku, $index)
     {
-        return $baseSku . '-' . str_pad($index, 2, '0', STR_PAD_LEFT);
+        $sku = $baseSku . '-' . str_pad($index, 2, '0', STR_PAD_LEFT);
+        $exists = ProductVariant::withTrashed()->where('sku', $sku)->exists();
+        $suffix = $index;
+        while ($exists) {
+            $suffix++;
+            $sku = $baseSku . '-' . str_pad($suffix, 2, '0', STR_PAD_LEFT);
+            $exists = ProductVariant::withTrashed()->where('sku', $sku)->exists();
+        }
+        return $sku;
     }
 
     public function getVariantValues()
