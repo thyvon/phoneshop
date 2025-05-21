@@ -18,68 +18,66 @@
                 <label>Name</label>
                 <input v-model="form.name" type="text" class="form-control" required />
               </div>
-              <div class="form-group col-md-6">
+              <div class="form-group col-md-3">
                 <label>SKU</label>
                 <input v-model="form.sku" type="text" class="form-control" />
               </div>
-            </div>
-            <div class="form-group">
-              <label>Description</label>
-              <textarea v-model="form.description" class="form-control" rows="3"></textarea>
-            </div>
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label>Barcode</label>
-                <input v-model="form.barcode" type="text" class="form-control" />
-              </div>
-              <div class="form-group col-md-6">
-                <label>Image URL</label>
-                <input v-model="form.image" type="text" class="form-control" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label>Brand</label>
-                <select v-model="form.brand_id" class="form-control">
-                  <option value="">Select Brand</option>
-                  <option v-for="brand in brands" :key="brand.id" :value="brand.id">{{ brand.name }}</option>
-                </select>
-              </div>
-              <div class="form-group col-md-6">
-                <label>Category</label>
-                <select v-model="form.category_id" class="form-control">
-                  <option value="">Select Category</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+              <div class="form-group col-md-3">
+                <label>Barcode Type</label>
+                <select ref="barcodeSelect" v-model="form.barcode" class="form-control">
+                  <option value="">Select Barcode Type</option>
+                  <option value="EAN13">EAN-13</option>
+                  <option value="UPC">UPC</option>
+                  <option value="QR">QR Code</option>
+                  <option value="CODE128">Code 128</option>
+                  <!-- Add more types as needed -->
                 </select>
               </div>
             </div>
+
             <div class="form-row">
-              <div class="form-group col-md-6">
+              <div class="form-group col-md-3">
                 <label>Unit</label>
-                <select v-model="form.unit_id" class="form-control">
+                <select ref="unitSelect" v-model="form.unit_id" class="form-control">
                   <option value="">Select Unit</option>
                   <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
                 </select>
               </div>
-              <div class="form-group col-md-6">
-                <label>Alert Quantity</label>
-                <input v-model="form.alert_qty" type="number" class="form-control" />
+              <div class="form-group col-md-3">
+                <label>Brand</label>
+                <select ref="brandSelect" v-model="form.brand_id" class="form-control">
+                  <option value="">Select Brand</option>
+                  <option v-for="brand in brands" :key="brand.id" :value="brand.id">{{ brand.name }}</option>
+                </select>
               </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group col-md-4">
-                <label>Tax (%)</label>
-                <input v-model="form.tax" type="number" class="form-control" />
+              <div class="form-group col-md-3">
+                <label>Category</label>
+                <select ref="categorySelect" v-model="form.category_id" class="form-control">
+                  <option value="">Select Category</option>
+                  <option v-for="cat in mainCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                </select>
               </div>
-              <div class="form-group col-md-4">
-                <label>Tax Type</label>
-                <select v-model="form.include_tax" class="form-control">
-                  <option :value="0">Exclusive</option>
-                  <option :value="1">Inclusive</option>
+              <div class="form-group col-md-3">
+                <label>Sub-Category</label>
+                <select ref="subCategorySelect" v-model="form.sub_category_id" class="form-control">
+                  <option value="">Select Sub-Category</option>
+                  <option v-for="cat in subCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
               </div>
             </div>
+
             <div class="form-row">
+              <div class="form-group col-md-9">
+                <label>Description</label>
+                <textarea v-model="form.description" class="form-control" rows="1"></textarea>
+              </div>
+              <div class="form-group col-md-3">
+                <label>Image URL</label>
+                <input v-model="form.image" type="text" class="form-control" />
+              </div>
+            </div>
+
+            <div class="form-row mb-3">
               <div class="form-group col-md-2">
                 <div class="custom-control custom-checkbox mt-4">
                   <input
@@ -90,6 +88,24 @@
                   />
                   <label class="custom-control-label" for="manageStock">Manage Stock</label>
                 </div>
+              </div>
+              <div class="form-group col-md-2" v-if="form.manage_stock">
+                <label>Alert Quantity</label>
+                <input v-model="form.alert_qty" type="number" class="form-control" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-md-2">
+                <label>Tax (%)</label>
+                <input v-model="form.tax" type="number" class="form-control" />
+              </div>
+              <div class="form-group col-md-2">
+                <label>Tax Type</label>
+                <select v-model="form.include_tax" class="form-control">
+                  <option :value="0">Exclusive</option>
+                  <option :value="1">Inclusive</option>
+                </select>
               </div>
               <div class="form-group col-md-2">
                 <div class="custom-control custom-checkbox mt-4">
@@ -213,7 +229,7 @@
                   </thead>
                   <tbody>
                     <tr v-for="(variant, index) in generatedVariants" :key="index">
-                      <td class="align-middle">{{ form.name }}<span v-if="variant.description"> - {{ variant.description }}</span></td>
+                      <td class="align-middle">{{ variant.description }}</td>
                       <td>
                         <input v-model="variant.sku" type="text" class="form-control form-control-sm" placeholder="SKU" />
                       </td>
@@ -276,10 +292,11 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, nextTick, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
 import BaseModal from '../BaseModal.vue'
 import { showAlert } from '@/utils/bootbox'
+import { initSelect2, destroySelect2 } from '@/utils/select2'
 
 // --- Props & Emits ---
 const props = defineProps({
@@ -287,6 +304,22 @@ const props = defineProps({
   currentProduct: Object
 })
 const emit = defineEmits(['submitted'])
+
+// --- Computed ---
+
+const subCategories = computed(() =>
+  categories.value.filter(cat =>
+    cat.sub_taxonomy === 1 && cat.parent_id === Number(form.value.category_id)
+  )
+)
+
+const mainCategories = computed(() =>
+  categories.value.filter(cat => cat.sub_taxonomy === 0)
+)
+
+const skipCategoryWatcher = ref(false)
+
+// --- End of Computed ---
 
 // --- State ---
 const showModal = ref(false)
@@ -297,9 +330,10 @@ const form = ref({
   name: '',
   sku: '',
   description: '',
-  barcode: '',
+  barcode: 'CODE128',
   brand_id: '',
   category_id: '',
+  sub_category_id: '',
   unit_id: '',
   manage_stock: true,
   alert_qty: 0,
@@ -316,6 +350,13 @@ const availableAttributes = ref([])
 const selectedAttributes = ref({})
 const generatedVariants = ref([])
 
+const barcodeSelect = ref(null)
+const unitSelect = ref(null)
+const brandSelect = ref(null)
+const categorySelect = ref(null)
+const subCategorySelect = ref(null)
+const taxTypeSelect = ref(null)
+
 // --- Lifecycle ---
 onMounted(async () => {
   await loadInitialData()
@@ -324,9 +365,9 @@ onMounted(async () => {
 
 // --- Methods ---
 const loadInitialData = async () => {
-  brands.value = (await axios.get('/api/brands')).data
-  categories.value = (await axios.get('/api/categories')).data
-  units.value = (await axios.get('/api/units')).data
+  brands.value = (await axios.get('/api/product-brands')).data
+  categories.value = (await axios.get('/api/product-categories')).data
+  units.value = (await axios.get('/api/product-units')).data
 }
 
 const removeVariant = (idx) => {
@@ -349,9 +390,10 @@ const resetForm = () => {
     name: '',
     sku: '',
     description: '',
-    barcode: '',
+    barcode: 'CODE128', // <-- Set default here
     brand_id: '',
     category_id: '',
+    sub_category_id: '',
     unit_id: '',
     manage_stock: true,
     alert_qty: 0,
@@ -365,7 +407,6 @@ const resetForm = () => {
     variants: []
   }
   selectedAttributes.value = {}
-  // Always start with one empty variant row
   generatedVariants.value = [{
     description: '',
     sku: '',
@@ -386,6 +427,7 @@ const show = async (product = null) => {
   await loadInitialData()
 
   if (product) {
+    skipCategoryWatcher.value = true
     form.value = {
       ...form.value,
       ...product,
@@ -393,9 +435,10 @@ const show = async (product = null) => {
       sku: product.sku ?? '',
       has_variants: Boolean(product.has_variants),
       variants: product.variants || [],
-      barcode: product.barcode ?? '',
+      barcode: product.barcode ? product.barcode : 'CODE128',
       brand_id: product.brand_id ?? '',
       category_id: product.category_id ?? '',
+      sub_category_id: product.sub_category_id ?? '',
       unit_id: product.unit_id ?? '',
       manage_stock: product.manage_stock !== undefined ? !!product.manage_stock : true,
       alert_qty: product.alert_qty ?? 0,
@@ -406,13 +449,14 @@ const show = async (product = null) => {
       include_tax: product.include_tax ?? 0,
       is_active: product.is_active !== undefined ? !!product.is_active : true,
     }
+    await nextTick()
+    skipCategoryWatcher.value = false
     selectedAttributes.value = getSelectedFromVariants(product.variants || [])
     generateVariants()
   } else {
     availableAttributes.value.forEach(attr => {
       if (attr.values?.length) selectedAttributes.value[attr.id] = []
     })
-    // Always show one empty row for new product
     generatedVariants.value = [{
       description: '',
       sku: '',
@@ -495,46 +539,69 @@ const generateVariants = () => {
     : null
 
   generatedVariants.value = allCombos.length
-    ? allCombos.map((combo, idx) => {
-        const valIds = combo.map(({ valId }) => valId).sort((a, b) => a - b)
-        const key = valIds.join('-')
-        const userInput = currentVariantMap.get(key)
-        const existing = existingVariantMap.get(key)
-        const desc = combo.map(({ attrId, valId }) => {
+  ? allCombos.map((combo, idx) => {
+      const valIds = combo.map(({ valId }) => valId).sort((a, b) => a - b)
+      const key = valIds.join('-')
+      const userInput = currentVariantMap.get(key)
+      const existing = existingVariantMap.get(key)
+      const desc = combo
+        .map(({ attrId, valId }) => {
           const attr = availableAttributes.value.find(a => a.id === attrId)
           const val = attr?.values.find(v => v.id === valId)
-          return `${attr?.name || 'Unknown'}: ${val?.value || 'Unknown'}`
-        }).join(', ')
-        let sku = userInput?.sku ?? existing?.sku
-        if (!sku) {
-          const baseSku = (defaultVariant?.sku ? defaultVariant.sku.replace(/-\d+$/, '') : form.value.sku)
-          sku = baseSku
-            ? `${baseSku}-${String(idx + 1).padStart(2, '0')}`
-            : ''
-        }
-        // Use userInput, then existing, then defaultVariant, then lastUserInput as fallback
-        return {
-          id: existing?.id || undefined,
-          description: desc,
-          sku,
-          price: userInput?.price ?? existing?.price ?? defaultVariant?.price ?? lastUserInput?.price ?? '',
-          stock: userInput?.stock ?? existing?.stock ?? defaultVariant?.stock ?? lastUserInput?.stock ?? '',
-          default_purchase_price: userInput?.default_purchase_price ?? existing?.default_purchase_price ?? defaultVariant?.default_purchase_price ?? lastUserInput?.default_purchase_price ?? '',
-          default_sale_price: userInput?.default_sale_price ?? existing?.default_sale_price ?? defaultVariant?.default_sale_price ?? lastUserInput?.default_sale_price ?? '',
-          default_margin: userInput?.default_margin ?? existing?.default_margin ?? defaultVariant?.default_margin ?? lastUserInput?.default_margin ?? '',
-          image: userInput?.image ?? existing?.image ?? defaultVariant?.image ?? lastUserInput?.image ?? '',
-          is_active: userInput?.is_active !== undefined
-            ? !!userInput.is_active
-            : (existing?.is_active !== undefined
-                ? !!Number(existing.is_active)
-                : (defaultVariant?.is_active !== undefined
-                    ? !!Number(defaultVariant.is_active)
-                    : (lastUserInput?.is_active !== undefined ? !!lastUserInput.is_active : true))),
-          variant_value_ids: valIds,
-        }
-      })
-    : (form.value.has_variants
-        ? [{
+          return {
+            ordinal: attr?.ordinal ?? 0,
+            text: `${attr?.name || 'Unknown'}: ${val?.value || 'Unknown'}`
+          }
+        })
+        .sort((a, b) => a.ordinal - b.ordinal)
+        .map(item => item.text)
+        .join(', ')
+      let sku = userInput?.sku ?? existing?.sku
+      if (!sku) {
+        sku = ''
+      }
+      // If this is a new combination (no userInput and no existing), clear all price-related fields
+      const isNewCombo = !userInput && !existing
+      return {
+        id: existing?.id || undefined,
+        description: desc,
+        sku,
+        price: isNewCombo ? '' : (userInput?.price ?? existing?.price ?? defaultVariant?.price ?? lastUserInput?.price ?? ''),
+        stock: isNewCombo ? '' : (userInput?.stock ?? existing?.stock ?? defaultVariant?.stock ?? lastUserInput?.stock ?? ''),
+        default_purchase_price: isNewCombo ? '' : (userInput?.default_purchase_price ?? existing?.default_purchase_price ?? defaultVariant?.default_purchase_price ?? lastUserInput?.default_purchase_price ?? ''),
+        default_sale_price: isNewCombo ? '' : (userInput?.default_sale_price ?? existing?.default_sale_price ?? defaultVariant?.default_sale_price ?? lastUserInput?.default_sale_price ?? ''),
+        default_margin: isNewCombo ? '' : (userInput?.default_margin ?? existing?.default_margin ?? defaultVariant?.default_margin ?? lastUserInput?.default_margin ?? ''),
+        image: isNewCombo ? '' : (userInput?.image ?? existing?.image ?? defaultVariant?.image ?? lastUserInput?.image ?? ''),
+        is_active: userInput?.is_active !== undefined
+          ? !!userInput.is_active
+          : (existing?.is_active !== undefined
+              ? !!Number(existing.is_active)
+              : (defaultVariant?.is_active !== undefined
+                  ? !!Number(defaultVariant.is_active)
+                  : (lastUserInput?.is_active !== undefined ? !!lastUserInput.is_active : true))),
+        variant_value_ids: valIds,
+      }
+    })
+  : (form.value.has_variants
+      ? [{
+          description: '',
+          sku: '',
+          price: '',
+          stock: '',
+          default_purchase_price: '',
+          default_sale_price: '',
+          default_margin: '',
+          image: '',
+          is_active: true,
+          variant_value_ids: [],
+        }]
+      : form.value.variants.length
+        ? form.value.variants.map(v => ({
+            ...v,
+            description: '',
+            variant_value_ids: [],
+          }))
+        : [{
             description: '',
             sku: '',
             price: '',
@@ -546,25 +613,7 @@ const generateVariants = () => {
             is_active: true,
             variant_value_ids: [],
           }]
-        : form.value.variants.length
-          ? form.value.variants.map(v => ({
-              ...v,
-              description: '',
-              variant_value_ids: [],
-            }))
-          : [{
-              description: '',
-              sku: '',
-              price: '',
-              stock: '',
-              default_purchase_price: '',
-              default_sale_price: '',
-              default_margin: '',
-              image: '',
-              is_active: true,
-              variant_value_ids: [],
-            }]
-      )
+    )
 }
 
 // --- Watchers ---
@@ -597,6 +646,56 @@ watch(() => form.value.has_variants, (newVal) => {
 watch(() => selectedAttributes.value, () => {
   if (form.value.has_variants) generateVariants()
 }, { deep: true })
+
+watch(() => form.value.category_id, () => {
+  if (skipCategoryWatcher.value) return
+  form.value.sub_category_id = ''
+})
+
+watch(showModal, async (val) => {
+  if (val) {
+    await nextTick()
+    const $modal = window.$('#productModal')
+    initSelect2(barcodeSelect.value, { placeholder: 'Select Barcode Type', width: '100%', allowClear:true, dropdownParent: $modal }, v => form.value.barcode = v)
+    initSelect2(unitSelect.value, { placeholder: 'Select Unit', width: '100%', allowClear:true, dropdownParent: $modal }, v => form.value.unit_id = v)
+    initSelect2(brandSelect.value, { placeholder: 'Select Brand', width: '100%', allowClear:true, dropdownParent: $modal }, v => form.value.brand_id = v)
+    initSelect2(categorySelect.value, { placeholder: 'Select Category', width: '100%', allowClear:true, dropdownParent: $modal }, v => form.value.category_id = v)
+    initSelect2(subCategorySelect.value, { placeholder: 'Select Sub-Category', width: '100%', allowClear:true, dropdownParent: $modal }, v => form.value.sub_category_id = v)
+    // Set sub-category value after Select2 and options are ready
+    await nextTick()
+    window.$(subCategorySelect.value).val(form.value.sub_category_id).trigger('change')
+    initSelect2(taxTypeSelect.value, { placeholder: 'Select Tax Type', width: '100%', allowClear:true, dropdownParent: $modal }, v => form.value.include_tax = v)
+  } else {
+    destroySelect2(barcodeSelect.value)
+    destroySelect2(unitSelect.value)
+    destroySelect2(brandSelect.value)
+    destroySelect2(categorySelect.value)
+    destroySelect2(subCategorySelect.value)
+    destroySelect2(taxTypeSelect.value)
+  }
+})
+
+watch(subCategories, async () => {
+  await nextTick()
+  destroySelect2(subCategorySelect.value)
+  const $modal = window.$('#productModal')
+  initSelect2(
+    subCategorySelect.value,
+    { placeholder: 'Select Sub-Category', width: '100%', allowClear:true, dropdownParent: $modal },
+    v => form.value.sub_category_id = v
+  )
+  // Set value if it exists in the options
+  const exists = subCategories.value.some(cat => cat.id == form.value.sub_category_id)
+  await nextTick()
+  if (exists) {
+    window.$(subCategorySelect.value).val(form.value.sub_category_id).trigger('change')
+  } else {
+    window.$(subCategorySelect.value).val('').trigger('change')
+    form.value.sub_category_id = ''
+  }
+})
+
+// --- End of Watchers ---
 
 const submitForm = async () => {
   try {

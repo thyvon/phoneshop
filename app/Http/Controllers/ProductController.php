@@ -74,6 +74,7 @@ class ProductController extends Controller
             'barcode' => 'nullable|string|max:255',
             'brand_id' => 'nullable|exists:brands,id',
             'category_id' => 'nullable|exists:categories,id',
+            'sub_category_id' => 'nullable|exists:categories,id',
             'unit_id' => 'nullable|exists:units,id',
             'manage_stock' => 'boolean',
             'alert_qty' => 'nullable|numeric',
@@ -138,6 +139,7 @@ class ProductController extends Controller
                 'barcode' => $validated['barcode'] ?? null,
                 'brand_id' => $validated['brand_id'] ?? null,
                 'category_id' => $validated['category_id'] ?? null,
+                'sub_category_id' => $validated['sub_category_id'] ?? null,
                 'unit_id' => $validated['unit_id'] ?? null,
                 'manage_stock' => $validated['manage_stock'] ?? true,
                 'alert_qty' => $validated['alert_qty'] ?? 0,
@@ -154,7 +156,7 @@ class ProductController extends Controller
                 $variantSku = $variant['sku'] ?? $this->generateVariantSku($baseSku, $index + 1);
                 $createdVariant = $product->variants()->create([
                     'sku' => $variantSku,
-                    'description' => $variant['description'] ?? null,
+                    // 'description' => $variant['description'] ?? null,
                     'price' => $variant['price'],
                     'stock' => $variant['stock'],
                     'default_purchase_price' => $variant['default_purchase_price'] ?? null,
@@ -230,6 +232,7 @@ class ProductController extends Controller
                 'barcode' => $validated['barcode'] ?? null,
                 'brand_id' => $validated['brand_id'] ?? null,
                 'category_id' => $validated['category_id'] ?? null,
+                'sub_category_id' => $validated['sub_category_id'] ?? null,
                 'unit_id' => $validated['unit_id'] ?? null,
                 'manage_stock' => $validated['manage_stock'] ?? true,
                 'alert_qty' => $validated['alert_qty'] ?? 0,
@@ -254,7 +257,7 @@ class ProductController extends Controller
                     $variant = ProductVariant::findOrFail($variantData['id']);
                     $variant->update([
                         'sku' => $variantData['sku'] ?? $variant->sku,
-                        'description' => $variantData['description'] ?? $variant->description,
+                        // 'description' => $variantData['description'] ?? $variant->description,
                         'price' => $variantData['price'],
                         'stock' => $variantData['stock'],
                         'default_purchase_price' => $variantData['default_purchase_price'] ?? $variant->default_purchase_price,

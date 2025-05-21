@@ -48,9 +48,6 @@
       </div>
     </div>
     <!-- End Assign Role Modal -->
-
-    <!-- User Modal -->
-    <!-- <UserModal ref="userModal" :isEditing="isEditing" @submitted="reloadDatatable" /> -->
   </div>
 </template>
 
@@ -58,6 +55,7 @@
 import { ref, reactive, onMounted, watch, nextTick } from 'vue'
 import axios from 'axios'
 import { confirmAction, showAlert } from '@/utils/bootbox'
+import { initSelect2, destroySelect2 } from '@/utils/select2'
 
 // --- State ---
 const datatableRef = ref(null)
@@ -103,29 +101,22 @@ onMounted(async () => {
   }
 })
 
-// --- Select2 integration for roles ---
+// --- Select2 integration for roles (reusable) ---
 watch(showAssignRoleModal, async (val) => {
-  const $ = window.$
   if (val) {
     await nextTick()
-    // Only destroy if already initialized
-    if ($(roleSelect.value).hasClass('select2-hidden-accessible')) {
-      $(roleSelect.value).select2('destroy')
-    }
-    $(roleSelect.value)
-      .select2({
+    initSelect2(
+      roleSelect.value,
+      {
         placeholder: 'Select roles',
         width: '100%',
         dropdownParent: $('.modal:visible')
-      })
-      .on('change', function () {
-        selectedRole.value = $(this).val() || []
-      })
-    $(roleSelect.value).val(selectedRole.value).trigger('change')
+      },
+      (val) => { selectedRole.value = val || [] }
+    )
+    window.$(roleSelect.value).val(selectedRole.value).trigger('change')
   } else {
-    if (roleSelect.value && $(roleSelect.value).hasClass('select2-hidden-accessible')) {
-      $(roleSelect.value).select2('destroy')
-    }
+    destroySelect2(roleSelect.value)
   }
 })
 

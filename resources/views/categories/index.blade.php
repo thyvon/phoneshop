@@ -1,8 +1,8 @@
-@php($header = 'Product')
+@php($header = 'Category')
 @extends('layouts.main')
 
 @section('content')
-  <product-page :page-length="{{ $pageLength ?? 20 }}" />
+  <category-page :page-length="{{ $pageLength ?? 10 }}" />
 @endsection
 
 @push('vite')

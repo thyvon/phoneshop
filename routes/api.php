@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Api\AuthController;
@@ -32,8 +33,6 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:viewAny,' . Product::class);
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])
         ->middleware('can:edit,product');
-    Route::get('/variant-values', [ProductController::class, 'getVariantValues']);
-    Route::get('/attributes-values', [ProductController::class, 'getAttributes']);
     Route::post('/products', [ProductController::class, 'store'])
         ->middleware('can:create,' . Product::class);
     Route::put('/products/{product}', [ProductController::class, 'update'])
@@ -42,10 +41,20 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:delete,product');
     Route::post('/products/{product}/approve', [ProductController::class, 'approve'])
         ->middleware('can:edit,product');
+    Route::get('/variant-values', [ProductController::class, 'getVariantValues']);
+    Route::get('/attributes-values', [ProductController::class, 'getAttributes']);
+
+    Route::get('/product-brands', [ProductController::class, 'getBrands']);
+    Route::get('/product-categories', [ProductController::class, 'getCategories']);
+    Route::get('/product-units', [ProductController::class, 'getUnits']);
+
+    // Categories
+    Route::get('/categories', [CategoryController::class, 'getCategories']);
+    Route::get('/categories/{id}/edit', [CategoryController::class, 'edit']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{id}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
     
-    Route::get('/brands', [ProductController::class, 'getBrands']);
-    Route::get('/categories', [ProductController::class, 'getCategories']);
-    Route::get('/units', [ProductController::class, 'getUnits']);
     
     //Product
 

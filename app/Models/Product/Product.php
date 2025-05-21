@@ -18,6 +18,7 @@ class Product extends Model
         'barcode',
         'brand_id',
         'category_id',
+        'sub_category_id',
         'unit_id',
         'manage_stock',
         'alert_qty',

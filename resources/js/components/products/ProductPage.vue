@@ -52,7 +52,7 @@ const datatableHeaders = [
   { text: 'Updated', value: 'updated_at', width: '20%', sortable: false }
 ]
 const datatableFetchUrl = '/api/products'
-const datatableActions = ['edit', 'delete', 'approve']
+const datatableActions = ['edit', 'delete']
 const datatableOptions = {
   responsive: true,
   pageLength: pageLength.value,
@@ -101,10 +101,6 @@ const handleDelete = async (product) => {
   }
 }
 
-const handleApprove = (product) => {
-  console.log('Approving', product)
-}
-
 // Event handlers for the datatable
 const handleSortChange = ({ column, direction }) => {
   datatableParams.sortColumn = column
@@ -129,7 +125,6 @@ const handleSearchChange = (search) => {
 const datatableHandlers = {
   edit: handleEdit,
   delete: handleDelete,
-  approve: handleApprove,
 }
 
 // Refresh datatable after modal actions

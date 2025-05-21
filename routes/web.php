@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
@@ -98,5 +99,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index')
         ->middleware('can:viewAny,' . Product::class);
+    
+    Route::get('/categories', [CategoryController::class, 'index'])
+        ->name('categories.index');
+        // ->middleware('can:viewAny,' . Product::class);
 });
 require __DIR__.'/auth.php';

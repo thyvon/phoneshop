@@ -24,7 +24,10 @@ import Example from './components/Example.vue'
 import Dashboard from './components/Dashboard.vue'
 import RolePage from './components/roles/RolePage.vue'
 import Datatable from './components/Datatable.vue'
+
+//Products
 import ProductPage from './components/products/ProductPage.vue'
+import CategoryPage from './components/categories/CategoryPage.vue'
 
 //User Management
 import UserPage from './components/users-management/User.vue'
@@ -37,7 +40,10 @@ app.component('example', Example)
 app.component('dashboard', Dashboard)
 app.component('role-page', RolePage)
 app.component('datatable', Datatable)
+
+// Products
 app.component('product-page', ProductPage)
+app.component('category-page', CategoryPage)
 
 // User Management
 app.component('user-page', UserPage)
