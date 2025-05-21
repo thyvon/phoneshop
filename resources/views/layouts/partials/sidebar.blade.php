@@ -46,10 +46,10 @@
             </li>
 
             @php
-                $ProductActive = request()->is('products*');
+                $ProductActive = request()->is('products*') || request()->is('categories*');
             @endphp
             <li class="{{ $ProductActive ? 'active open' : '' }}">
-                <a href="#" title="User Management" data-filter-tags="user management">
+                <a href="#" title="Product Management" data-filter-tags="product management">
                     <i class="fal fa-box"></i>
                     <span class="nav-link-text">Product Management</span>
                 </a>
@@ -57,6 +57,11 @@
                     <li class="{{ request()->is('products*') ? 'active' : '' }}">
                         <a href="{{ route('products.index') }}" title="Product" data-filter-tags="products">
                             <span class="nav-link-text">Products List</span>
+                        </a>
+                    </li>
+                    <li class="{{ request()->is('categories*') ? 'active' : '' }}">
+                        <a href="{{ route('categories.index') }}" title="Category" data-filter-tags="categories">
+                            <span class="nav-link-text">Categories</span>
                         </a>
                     </li>
                 </ul>

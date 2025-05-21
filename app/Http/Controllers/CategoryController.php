@@ -42,12 +42,6 @@ class CategoryController extends Controller
         $limit = intval($request->get('limit', 10));
         $categories = $query->paginate($limit);
 
-        // Add parent_name attribute for each category
-        $categories->getCollection()->transform(function ($category) {
-            $category->parent_name = $category->parent ? $category->parent->name : '-';
-            return $category;
-        });
-
         return response()->json([
             'data' => $categories->items(),
             'recordsTotal' => $categories->total(),

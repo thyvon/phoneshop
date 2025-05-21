@@ -21,28 +21,31 @@
     </datatable>
 
     <!-- Category Modal -->
-    <CategoryModal ref="categoryModal" :isEditing="isEditing" @submitted="reloadDatatable" />
+    <CategoryModal
+      ref="categoryModal"
+      :isEditing="isEditing"
+      @submitted="reloadDatatable"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive } from 'vue'
 import axios from 'axios'
 import CategoryModal from './CategoryModal.vue'
 import { confirmAction, showAlert } from '@/utils/bootbox'
 
-// Refs and reactive state
+// Refs and state
 const datatableRef = ref(null)
 const categoryModal = ref(null)
 const isEditing = ref(false)
+const pageLength = ref(10)
 
-// Parameters for datatable fetch - reactive to enable updates
+// Datatable configuration
 const datatableParams = reactive({
   sortColumn: 'created_at',
   sortDirection: 'desc',
-  page: 1,
-  limit: 10,
-  search: ''
+  // Optionally add: page: 1, limit: 10, search: ''
 })
 
 const datatableHeaders = [
@@ -50,43 +53,40 @@ const datatableHeaders = [
   { text: 'Description', value: 'description', width: '25%', sortable: true },
   { text: 'Active', value: 'is_active', width: '10%', sortable: true },
   { text: 'Sub Taxonomy', value: 'sub_taxonomy', width: '10%', sortable: true },
-  { text: 'Parent Category', value: 'parent_name', width: '15%', sortable: false },
   { text: 'Created', value: 'created_at', width: '10%', sortable: true },
   { text: 'Updated', value: 'updated_at', width: '10%', sortable: false }
 ]
 
 const datatableFetchUrl = '/api/categories'
 const datatableActions = ['edit', 'delete']
-
 const datatableOptions = {
   responsive: true,
-  pageLength: datatableParams.limit,
-  lengthMenu: [
-    [10, 20, 50, 100, 1000],
-    [10, 20, 50, 100, 1000]
-  ]
+  pageLength: pageLength.value,
+  lengthMenu: [[10, 20, 50, 100, 1000], [10, 20, 50, 100, 1000]],
 }
 
-// Modal handlers
+// Modal handling
 const openCreateModal = () => {
   isEditing.value = false
-  categoryModal.value.show()
+  categoryModal.value.show({ isEditing: false })
 }
 
 const openEditModal = async (category) => {
   try {
     const response = await axios.get(`/api/categories/${category.id}/edit`)
-    const fullCategory = response.data.category || response.data.categories || {}
-
+    const fullCategory = response.data.data || {}
     isEditing.value = true
-    categoryModal.value.show(fullCategory)
+    categoryModal.value.show({
+      isEditing: true,
+      ...fullCategory
+    })
   } catch (error) {
     console.error('Failed to fetch category data for editing:', error)
     showAlert('Error', 'Failed to load category data for editing.', 'danger')
   }
 }
 
-// Action handlers for datatable
+// Action handlers
 const handleEdit = openEditModal
 
 const handleDelete = async (category) => {
@@ -110,23 +110,20 @@ const handleDelete = async (category) => {
 const handleSortChange = ({ column, direction }) => {
   datatableParams.sortColumn = column
   datatableParams.sortDirection = direction
-  reloadDatatable()
 }
 
 const handlePageChange = (page) => {
-  datatableParams.page = page
-  reloadDatatable()
+  // Uncomment and implement if your datatable supports pagination
+  // datatableParams.page = page
 }
 
 const handleLengthChange = (length) => {
-  datatableParams.limit = length
-  reloadDatatable()
+  // Uncomment and implement if your datatable supports page length
+  // datatableParams.limit = length
 }
 
 const handleSearchChange = (search) => {
   datatableParams.search = search
-  datatableParams.page = 1 // reset page on search
-  reloadDatatable()
 }
 
 // Map actions to handlers
@@ -139,10 +136,4 @@ const datatableHandlers = {
 const reloadDatatable = () => {
   datatableRef.value?.reload()
 }
-
-// Optional: watch params and auto reload (if your datatable doesn't emit events for all changes)
-// watch(datatableParams, () => {
-//   reloadDatatable()
-// }, { deep: true })
-
 </script>
