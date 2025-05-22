@@ -60,8 +60,8 @@
               <div class="form-group col-md-3">
                 <label>Sub-Category</label>
                 <select ref="subCategorySelect" v-model="form.sub_category_id" class="form-control">
-                  <option value="null">Select Sub-Category</option>
-                  <option v-for="cat in subCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                <option :value="null">Select Sub-Category</option>
+                <option v-for="cat in subCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
               </div>
             </div>
@@ -393,7 +393,7 @@ const resetForm = () => {
     barcode: 'CODE128', // <-- Set default here
     brand_id: '',
     category_id: '',
-    sub_category_id: '',
+    sub_category_id: null,
     unit_id: '',
     manage_stock: true,
     alert_qty: 0,
@@ -649,7 +649,7 @@ watch(() => selectedAttributes.value, () => {
 
 watch(() => form.value.category_id, () => {
   if (skipCategoryWatcher.value) return
-  form.value.sub_category_id = ''
+  form.value.sub_category_id = null
 })
 
 watch(showModal, async (val) => {
@@ -687,12 +687,12 @@ watch(subCategories, async () => {
   // Set value if it exists in the options
   const exists = subCategories.value.some(cat => cat.id == form.value.sub_category_id)
   await nextTick()
-  if (exists) {
+    if (exists) {
     window.$(subCategorySelect.value).val(form.value.sub_category_id).trigger('change')
-  } else {
+    } else {
     window.$(subCategorySelect.value).val('').trigger('change')
-    form.value.sub_category_id = ''
-  }
+    form.value.sub_category_id = null
+    }
 })
 
 // --- End of Watchers ---
@@ -720,7 +720,7 @@ const submitForm = async () => {
 defineExpose({ show })
 </script>
 
-<style scoped> 
+<style scoped>
 .table th,
 .table td {
   min-width: 70px;
