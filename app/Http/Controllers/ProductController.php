@@ -63,61 +63,55 @@ class ProductController extends Controller
 
     private function productValidationRules($productId = null, $variantIds = [])
     {
-        return [
-            'sku' => [
-                'nullable',
-                'unique:products,sku' . ($productId ? ',' . $productId : ''),
-            ],
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'has_variants' => 'boolean',
-            'barcode' => 'nullable|string|max:255',
-            'brand_id' => 'nullable|exists:brands,id',
-            'category_id' => 'nullable|exists:categories,id',
-            'sub_category_id' => 'nullable|exists:categories,id',
-            'unit_id' => 'nullable|exists:units,id',
-            'manage_stock' => 'boolean',
-            'alert_qty' => 'nullable|numeric',
-            'image' => 'nullable|string|max:255',
-            'not_sale' => 'boolean',
-            'serial_des' => 'boolean',
-            'tax' => 'nullable|numeric',
-            'include_tax' => 'nullable|integer',
-            'is_active' => 'boolean',
-            // 'price' => 'nullable|numeric|required_if:has_variants,false',
-            // 'stock' => 'nullable|numeric|required_if:has_variants,false',
-            // 'default_purchase_price' => 'nullable|numeric|required_if:has_variants,false',
-            // 'default_sale_price' => 'nullable|numeric|required_if:has_variants,false',
-            // 'default_margin' => 'nullable|numeric|required_if:has_variants,false',
-            'variants' => 'array|nullable',
-            'variants.*.id' => 'nullable|exists:product_variants,id',
-            'variants.*.sku' => [
-                'nullable',
-                'string',
-                function ($attribute, $value, $fail) use ($variantIds) {
-                    $index = (int)explode('.', $attribute)[1];
-                    $variantId = $variantIds[$index] ?? null;
-                    $query = \App\Models\Product\ProductVariant::where('sku', $value);
-                    if ($variantId) {
-                        $query->where('id', '!=', $variantId);
-                    }
-                    if ($query->exists()) {
-                        $fail('The SKU has already been taken.');
-                    }
+    return [
+        'sku' => [
+            'nullable',
+            'unique:products,sku' . ($productId ? ',' . $productId : ''),
+        ],
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'has_variants' => 'boolean',
+        'barcode' => 'nullable|string|max:255',
+        'brand_id' => 'nullable|exists:brands,id',
+        'category_id' => 'nullable|exists:categories,id',
+        'sub_category_id' => 'nullable|exists:categories,id',
+        'unit_id' => 'nullable|exists:units,id',
+        'manage_stock' => 'boolean',
+        'alert_qty' => 'nullable|numeric',
+        'image' => 'nullable|string|max:255',
+        'not_sale' => 'boolean',
+        'serial_des' => 'boolean',
+        'tax' => 'nullable|numeric',
+        'include_tax' => 'nullable|integer',
+        'is_active' => 'boolean',
+        'variants' => 'array|nullable',
+        'variants.*.id' => 'nullable|exists:product_variants,id',
+        'variants.*.sku' => [
+            'nullable',
+            'string',
+            function ($attribute, $value, $fail) use ($variantIds) {
+                $index = (int) explode('.', $attribute)[1];
+                $variantId = $variantIds[$index] ?? null;
+                $query = ProductVariant::where('sku', $value);
+                if ($variantId) {
+                    $query->where('id', '!=', $variantId);
                 }
-            ],
-            // 'variants.*.description' => 'required_if:has_variants,true|string',
-            'variants.*.price' => 'required|numeric',
-            'variants.*.stock' => 'required|numeric',
-            'variants.*.default_purchase_price' => 'nullable|numeric',
-            'variants.*.default_sale_price' => 'nullable|numeric',
-            'variants.*.default_margin' => 'nullable|numeric',
-            'variants.*.image' => 'nullable|string|max:255',
-            'variants.*.variant_value_ids' => 'array',
-            'variants.*.variant_value_ids.*' => 'exists:variant_values,id',
-            'variants.*.is_active' => 'boolean',
-        ];
-    }
+                if ($query->exists()) {
+                    $fail('The SKU has already been taken.');
+                }
+            }
+        ],
+        'variants.*.price' => 'required|numeric',
+        'variants.*.stock' => 'required|numeric',
+        'variants.*.default_purchase_price' => 'nullable|numeric',
+        'variants.*.default_sale_price' => 'nullable|numeric',
+        'variants.*.default_margin' => 'nullable|numeric',
+        'variants.*.image' => 'nullable|string|max:255',
+        'variants.*.variant_value_ids' => 'array',
+        'variants.*.variant_value_ids.*' => 'exists:variant_values,id',
+        'variants.*.is_active' => 'boolean',
+    ];
+}
 
 
     public function store(Request $request)
