@@ -60,7 +60,7 @@
               <div class="form-group col-md-3">
                 <label>Sub-Category</label>
                 <select ref="subCategorySelect" v-model="form.sub_category_id" class="form-control">
-                <option :value="null">Select Sub-Category</option>
+                <option value="">Select Sub Category</option>
                 <option v-for="cat in subCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
               </div>
@@ -700,6 +700,9 @@ watch(subCategories, async () => {
 const submitForm = async () => {
   try {
 
+    if (form.value.sub_category_id === '' || form.value.sub_category_id === undefined) {
+      form.value.sub_category_id = null
+    }
     if (Array.isArray(form.value.sub_category_id)) {
       form.value.sub_category_id = form.value.sub_category_id.length ? form.value.sub_category_id[0] : null
     }
