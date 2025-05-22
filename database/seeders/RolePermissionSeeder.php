@@ -12,8 +12,8 @@ class RolePermissionSeeder extends Seeder
 {
     public function run()
     {
-        $features = ['product', 'sale'];
-        $actions = ['create', 'view', 'update', 'delete', 'edit'];
+        $features = ['product', 'sale', 'category'];
+        $actions = ['create', 'view', 'update', 'delete', 'restore', 'forceDelete'];
 
         $permissions = [];
 

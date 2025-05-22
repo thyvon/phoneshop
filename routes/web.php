@@ -9,7 +9,9 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 
+// For Permissions and Roles
 use App\Models\Product\Product;
+use App\Models\Product\Category;
 
 /*
 |----------------------------------------------------------------------
@@ -101,7 +103,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:viewAny,' . Product::class);
     
     Route::get('/categories', [CategoryController::class, 'index'])
-        ->name('categories.index');
+        ->name('categories.index')->middleware('can:viewAny,' . Category::class);
         // ->middleware('can:viewAny,' . Product::class);
 });
 require __DIR__.'/auth.php';

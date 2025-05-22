@@ -52,7 +52,7 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
-import BaseModal from '../BaseModal.vue'
+import BaseModal from '@/components/reusable/BaseModal.vue'
 import { showAlert } from '@/utils/bootbox'
 
 const props = defineProps({

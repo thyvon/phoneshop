@@ -12,11 +12,13 @@ class CategoryController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', Category::class);
         return view('categories.index');
     }
 
     public function getCategories(Request $request)
     {
+        $this->authorize('viewAny', Category::class);
         $query = Category::with('parent');
 
         if ($search = $request->get('search')) {
@@ -42,8 +44,24 @@ class CategoryController extends Controller
         $limit = intval($request->get('limit', 10));
         $categories = $query->paginate($limit);
 
+        // Transform each category to include parent_name
+        $data = collect($categories->items())->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+                'code' => $category->code,
+                'description' => $category->description,
+                'is_active' => $category->is_active,
+                'sub_taxonomy' => $category->sub_taxonomy,
+                'parent_id' => $category->parent_id,
+                'parent_name' => $category->parent ? $category->parent->name : null,
+                'created_at' => $category->created_at,
+                'updated_at' => $category->updated_at,
+            ];
+        });
+
         return response()->json([
-            'data' => $categories->items(),
+            'data' => $data,
             'recordsTotal' => $categories->total(),
             'recordsFiltered' => $categories->total(),
             'draw' => intval($request->get('draw')),
@@ -69,7 +87,13 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate($this->categoryValidationRules());
+        $this->authorize('create', Category::class);
+        // Convert empty string or string 'null' to null for parent_id
+        $input = $request->all();
+        if (array_key_exists('parent_id', $input) && ($input['parent_id'] === '' || $input['parent_id'] === 'null')) {
+            $input['parent_id'] = null;
+        }
+        $validated = validator($input, $this->categoryValidationRules())->validate();
 
         DB::beginTransaction();
         try {
@@ -92,7 +116,7 @@ class CategoryController extends Controller
 
             return response()->json([
                 'message' => 'Category created successfully.',
-                'data' => $category
+                'data' => $category->load('parent')
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -108,20 +132,27 @@ class CategoryController extends Controller
         }
     }
 
-    public function edit($id)
+    public function edit(Category $category)
     {
-        $category = Category::findOrFail($id);
+        $this->authorize('update', $category);
+        $category = Category::with('parent')->findOrFail($category->id);
 
         return response()->json([
             'data' => $category
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Category $category)
     {
-        $category = Category::findOrFail($id);
+        $this->authorize('update', $category);
+        $category = Category::findOrFail($category->id);
 
-        $validated = $request->validate($this->categoryValidationRules($category->id));
+        // Convert empty string or string 'null' to null for parent_id
+        $input = $request->all();
+        if (array_key_exists('parent_id', $input) && ($input['parent_id'] === '' || $input['parent_id'] === 'null')) {
+            $input['parent_id'] = null;
+        }
+        $validated = validator($input, $this->categoryValidationRules($category->id))->validate();
 
         DB::beginTransaction();
         try {
@@ -144,7 +175,7 @@ class CategoryController extends Controller
 
             return response()->json([
                 'message' => 'Category updated successfully.',
-                'data' => $category
+                'data' => $category->load('parent')
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -160,9 +191,10 @@ class CategoryController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(Category $category)
     {
-        $category = Category::findOrFail($id);
+        $this->authorize('delete', $category);
+        $category = Category::findOrFail($category->id);
 
         // Optional: check for children or associations before deleting
 

@@ -28,7 +28,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import axios from 'axios'
-import ProductModal from './ProductModal.vue'
+import ProductModal from '@/components/products/ProductModal.vue'
 import { confirmAction, showAlert } from '@/utils/bootbox'
 
 // Refs and reactive state

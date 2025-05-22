@@ -18,6 +18,11 @@
           <i class="fal fa-plus"></i> Create Category
         </button>
       </template>
+      <template #cell-is_active="{ value }">
+        <span :class="value ? 'badge badge-success' : 'badge badge-secondary'">
+          {{ value ? 'Active' : 'Inactive' }}
+        </span>
+      </template>
     </datatable>
 
     <!-- Category Modal -->
@@ -53,6 +58,7 @@ const datatableHeaders = [
   { text: 'Description', value: 'description', width: '25%', sortable: true },
   { text: 'Active', value: 'is_active', width: '10%', sortable: true },
   { text: 'Sub Taxonomy', value: 'sub_taxonomy', width: '10%', sortable: true },
+  { text: 'Parent Category', value: 'parent_name', width: '15%', sortable: false }, // <-- Add this line
   { text: 'Created', value: 'created_at', width: '10%', sortable: true },
   { text: 'Updated', value: 'updated_at', width: '10%', sortable: false }
 ]

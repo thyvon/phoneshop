@@ -53,8 +53,13 @@
               </div>
               <div class="form-group col-md-4">
                 <label>Parent Category</label>
-                <select v-model="form.parent_id" class="form-control">
-                  <option :value="null">-- None --</option>
+                <select
+                  ref="parentSelect"
+                  v-model="form.parent_id"
+                  class="form-control"
+                  :disabled="!form.sub_taxonomy"
+                >
+                  <option :value="''">-- None --</option>
                   <option
                     v-for="cat in mainCategories"
                     :key="cat.id"
@@ -86,10 +91,11 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed, onMounted } from 'vue'
+import { ref, nextTick, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
-import BaseModal from '../BaseModal.vue'
+import BaseModal from '@/components/reusable/BaseModal.vue'
 import { showAlert } from '@/utils/bootbox'
+import { initSelect2, destroySelect2 } from '@/utils/select2'
 
 const props = defineProps({ isEditing: Boolean })
 const emit = defineEmits(['submitted'])
@@ -97,6 +103,7 @@ const emit = defineEmits(['submitted'])
 const showModal = ref(false)
 const isSubmitting = ref(false)
 const categories = ref([])
+const parentSelect = ref(null)
 const form = ref({
   id: null,
   name: '',
@@ -107,7 +114,6 @@ const form = ref({
   parent_id: null
 })
 
-// Computed for main categories (not sub-taxonomy)
 const mainCategories = computed(() =>
   categories.value.filter(cat => !cat.sub_taxonomy)
 )
@@ -150,16 +156,27 @@ const show = async (category = null) => {
   }
   await nextTick()
   showModal.value = true
+  await nextTick()
+  initParentSelect2()
 }
 
 const hideModal = () => {
   showModal.value = false
+  destroyParentSelect2()
 }
 
 const submitForm = async () => {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
+    // --- Ensure parent_id is always null or a valid value ---
+    if (form.value.parent_id === '' || form.value.parent_id === undefined) {
+      form.value.parent_id = null
+    }
+    if (Array.isArray(form.value.parent_id)) {
+      form.value.parent_id = form.value.parent_id.length ? form.value.parent_id[0] : null
+    }
+
     const method = props.isEditing ? 'put' : 'post'
     const url = props.isEditing && form.value.id
       ? `/api/categories/${form.value.id}`
@@ -171,8 +188,16 @@ const submitForm = async () => {
       description: form.value.description?.toString().trim() ?? '',
       is_active: !!form.value.is_active,
       sub_taxonomy: !!form.value.sub_taxonomy,
-      parent_id: form.value.parent_id === null || form.value.parent_id === '' ? null : form.value.parent_id
+      parent_id:
+        form.value.parent_id === null ||
+        form.value.parent_id === '' ||
+        form.value.parent_id === undefined ||
+        form.value.parent_id === 'null' ||
+        Number(form.value.parent_id) === 0
+          ? null
+          : Number(form.value.parent_id)
     }
+        console.log('payload', payload)
 
     await axios[method](url, payload)
     emit('submitted')
@@ -185,6 +210,71 @@ const submitForm = async () => {
     isSubmitting.value = false
   }
 }
+
+// --- Select2 Integration ---
+function initParentSelect2() {
+  if (!parentSelect.value) return
+  const $modal = window.$('#categoryModal')
+  initSelect2(
+    parentSelect.value,
+    {
+      placeholder: '-- None --',
+      allowClear: true,
+      width: '100%',
+      dropdownParent: $modal
+    },
+    val => {
+      form.value.parent_id = (val === '' || val === null || val === 'null') ? null : Number(val)
+    }
+  )
+  // Set initial value after options are rendered
+  nextTick(() => {
+    // Check if the current parent_id exists in the options
+    const exists = mainCategories.value.some(cat => cat.id == form.value.parent_id)
+    if (exists) {
+      window.$(parentSelect.value).val(form.value.parent_id).trigger('change')
+    } else {
+      window.$(parentSelect.value).val('').trigger('change')
+      form.value.parent_id = null
+    }
+  })
+}
+
+function destroyParentSelect2() {
+  if (parentSelect.value) {
+    destroySelect2(parentSelect.value)
+    window.$(parentSelect.value).off('change')
+  }
+}
+
+// Watch for modal open/close to init/destroy select2
+watch(showModal, async (val) => {
+  if (val) {
+    await nextTick()
+    initParentSelect2()
+  } else {
+    destroyParentSelect2()
+  }
+})
+
+// Watch for sub_taxonomy changes to clear parent_id and reset Select2 if unchecked
+watch(() => form.value.sub_taxonomy, (val) => {
+  if (!val) {
+    form.value.parent_id = null
+    nextTick(() => {
+      if (parentSelect.value) {
+        window.$(parentSelect.value).val('').trigger('change')
+      }
+    })
+  }
+})
+
+// Watch for category list changes to re-init select2
+watch(mainCategories, async () => {
+  await nextTick()
+  destroyParentSelect2()
+  initParentSelect2()
+})
 
 defineExpose({ show })
 

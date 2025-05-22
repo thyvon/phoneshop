@@ -23,7 +23,9 @@ window.axios = axios
 import Example from './components/Example.vue'
 import Dashboard from './components/Dashboard.vue'
 import RolePage from './components/roles/RolePage.vue'
-import Datatable from './components/Datatable.vue'
+
+//Reusable Components
+import Datatable from './components/reusable/Datatable.vue'
 
 //Products
 import ProductPage from './components/products/ProductPage.vue'

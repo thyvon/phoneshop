@@ -26,7 +26,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import RoleModal from './RoleModal.vue'
+import RoleModal from '@/components/roles/RoleModal.vue'
 import axios from 'axios'
 
 const datatableRef = ref(null)

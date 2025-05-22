@@ -34,7 +34,7 @@ class ProductPolicy
 
     public function edit(User $user): bool
     {
-        return $user->can('product.edit');
+        return $user->can('product.update');
     }
 
     public function update(User $user, Product $product): bool
@@ -45,5 +45,14 @@ class ProductPolicy
     public function delete(User $user, Product $product): bool
     {
         return $user->can('product.delete');
+    }
+
+    public function restore(User $user, Product $product): bool
+    {
+        return $user->can('product.restore');
+    }
+    public function forceDelete(User $user, Product $product): bool
+    {
+        return $user->can('product.force_delete');
     }
 }

@@ -71,11 +71,11 @@ class ProductController extends Controller
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
         'has_variants' => 'boolean',
-        'barcode' => 'nullable|string|max:255',
-        'brand_id' => 'nullable|exists:brands,id',
-        'category_id' => 'nullable|exists:categories,id',
+        'barcode' => 'required|string|max:255',
+        'brand_id' => 'required|exists:brands,id',
+        'category_id' => 'required|exists:categories,id',
         'sub_category_id' => 'nullable|exists:categories,id',
-        'unit_id' => 'nullable|exists:units,id',
+        'unit_id' => 'required|exists:units,id',
         'manage_stock' => 'boolean',
         'alert_qty' => 'nullable|numeric',
         'image' => 'nullable|string|max:255',
@@ -183,7 +183,7 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $this->authorize('edit', $product);
+        $this->authorize('update', $product);
 
         try {
             $product->load(['variants.values.attribute']);

@@ -8,7 +8,10 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\UserController;
+
+// For Permissions and Roles
 use App\Models\Product\Product;
+use App\Models\Product\Category;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,7 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts'])
         ->middleware('can:viewAny,' . Product::class);
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])
-        ->middleware('can:edit,product');
+        ->middleware('can:update,product');
     Route::post('/products', [ProductController::class, 'store'])
         ->middleware('can:create,' . Product::class);
     Route::put('/products/{product}', [ProductController::class, 'update'])
@@ -49,11 +52,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/product-units', [ProductController::class, 'getUnits']);
 
     // Categories
-    Route::get('/categories', [CategoryController::class, 'getCategories']);
-    Route::get('/categories/{id}/edit', [CategoryController::class, 'edit']);
-    Route::post('/categories', [CategoryController::class, 'store']);
-    Route::put('/categories/{id}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+    Route::get('/categories', [CategoryController::class, 'getCategories'])->middleware('can:viewAny,' . Category::class);
+    Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->middleware('can:update,category');
+    Route::post('/categories', [CategoryController::class, 'store'])->middleware('can:create,' . Category::class);
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware('can:update,category');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('can:delete,category');
     
     
     //Product

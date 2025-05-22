@@ -284,7 +284,13 @@
 
     <template #footer>
       <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
-      <button type="submit" class="btn btn-primary" @click="submitForm">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        @click="submitForm"
+        :disabled="isSubmitting"
+      >
+        <span v-if="isSubmitting" class="spinner-border spinner-border-sm mr-1"></span>
         {{ isEditing ? 'Update' : 'Create' }}
       </button>
     </template>
@@ -294,7 +300,7 @@
 <script setup>
 import { ref, nextTick, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
-import BaseModal from '../BaseModal.vue'
+import BaseModal from '@/components/reusable/BaseModal.vue'
 import { showAlert } from '@/utils/bootbox'
 import { initSelect2, destroySelect2 } from '@/utils/select2'
 
@@ -316,8 +322,6 @@ const subCategories = computed(() =>
 const mainCategories = computed(() =>
   categories.value.filter(cat => cat.sub_taxonomy === 0)
 )
-
-const skipCategoryWatcher = ref(false)
 
 // --- End of Computed ---
 
@@ -356,6 +360,8 @@ const brandSelect = ref(null)
 const categorySelect = ref(null)
 const subCategorySelect = ref(null)
 const taxTypeSelect = ref(null)
+const isSubmitting = ref(false)
+const skipCategoryWatcher = ref(false)
 
 // --- Lifecycle ---
 onMounted(async () => {
@@ -698,6 +704,8 @@ watch(subCategories, async () => {
 // --- End of Watchers ---
 
 const submitForm = async () => {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
   try {
 
     if (form.value.sub_category_id === '' || form.value.sub_category_id === undefined) {
@@ -722,6 +730,8 @@ const submitForm = async () => {
   } catch (err) {
     console.error('Submit error:', err)
     showAlert('Error', err.response?.data?.message || 'Failed to save product.', 'danger')
+  } finally {
+    isSubmitting.value = false
   }
 }
 

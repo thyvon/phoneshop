@@ -87,6 +87,16 @@ const renderColumnData = (key, val) => {
     const text = val ? 'Yes' : 'No';
     return `<span class="${badgeClass} text-center">${text}</span>`;
   }
+    if (key === 'is_active') {
+    const badgeClass = val ? 'badge badge-success' : 'badge badge-secondary';
+    const text = val ? 'Active' : 'Inactive';
+    return `<span class="${badgeClass} text-center">${text}</span>`;
+  }
+    if (key === 'sub_taxonomy') {
+    const badgeClass = val ? 'badge badge-info' : 'badge badge-secondary';
+    const text = val ? 'Yes' : 'No';
+    return `<span class="${badgeClass} text-center">${text}</span>`;
+  }
   return val ?? '';
 };
 

@@ -40,5 +40,6 @@ class RouteServiceProvider extends ServiceProvider
         });
 
         Route::model('product', \App\Models\Product\Product::class);
+        Route::model('category', \App\Models\Product\Category::class);
     }
 }

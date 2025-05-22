@@ -45,5 +45,5 @@ export const showAlert = (title, message, type = 'success') => {
 
   setTimeout(() => {
     dialog.modal('hide')
-  }, 2000) // Auto-close after 2 seconds
+  }, 4000) // Auto-close after 2 seconds
 }
