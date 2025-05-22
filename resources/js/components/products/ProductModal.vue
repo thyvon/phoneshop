@@ -699,6 +699,11 @@ watch(subCategories, async () => {
 
 const submitForm = async () => {
   try {
+
+    if (Array.isArray(form.value.sub_category_id)) {
+      form.value.sub_category_id = form.value.sub_category_id.length ? form.value.sub_category_id[0] : null
+    }
+
     const method = props.isEditing ? 'put' : 'post'
     const url = props.isEditing
       ? `/api/products/${form.value.id}`
