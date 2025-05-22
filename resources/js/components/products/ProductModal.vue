@@ -438,7 +438,7 @@ const show = async (product = null) => {
       barcode: product.barcode ? product.barcode : 'CODE128',
       brand_id: product.brand_id ?? '',
       category_id: product.category_id ?? '',
-      sub_category_id: product.sub_category_id ?? '',
+      sub_category_id: product.sub_category_id ?? null,
       unit_id: product.unit_id ?? '',
       manage_stock: product.manage_stock !== undefined ? !!product.manage_stock : true,
       alert_qty: product.alert_qty ?? 0,
