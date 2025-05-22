@@ -60,7 +60,7 @@
               <div class="form-group col-md-3">
                 <label>Sub-Category</label>
                 <select ref="subCategorySelect" v-model="form.sub_category_id" class="form-control">
-                  <option value="">Select Sub-Category</option>
+                  <option value="null">Select Sub-Category</option>
                   <option v-for="cat in subCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
               </div>
@@ -333,7 +333,7 @@ const form = ref({
   barcode: 'CODE128',
   brand_id: '',
   category_id: '',
-  sub_category_id: '',
+  sub_category_id: null,
   unit_id: '',
   manage_stock: true,
   alert_qty: 0,
