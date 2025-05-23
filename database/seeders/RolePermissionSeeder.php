@@ -12,14 +12,31 @@ class RolePermissionSeeder extends Seeder
 {
     public function run()
     {
-        $features = ['product', 'sale', 'category'];
-        $actions = ['create', 'view', 'update', 'delete', 'restore', 'forceDelete'];
+        $features = ['product', 'sale', 'category', 'brand'];
+        $categoryActions = ['create', 'view', 'update', 'delete'];
+        $productActions = ['create', 'view', 'update', 'delete', 'restore', 'forceDelete'];
+        $saleActions = ['create', 'view', 'update', 'delete', 'restore', 'forceDelete'];
+        $brandActions = ['create', 'view', 'update', 'delete'];
 
         $permissions = [];
 
         foreach ($features as $feature) {
-            foreach ($actions as $action) {
-                $permissions[] = "$feature.$action";
+            if ($feature == 'category') {
+                foreach ($categoryActions as $action) {
+                    $permissions[] = "$feature.$action";
+                }
+            } elseif ($feature == 'product') {
+                foreach ($productActions as $action) {
+                    $permissions[] = "$feature.$action";
+                }
+            } elseif ($feature == 'sale') {
+                foreach ($saleActions as $action) {
+                    $permissions[] = "$feature.$action";
+                }
+            } elseif ($feature == 'brand') {
+                foreach ($brandActions as $action) {
+                    $permissions[] = "$feature.$action";
+                }
             }
         }
 
@@ -33,13 +50,6 @@ class RolePermissionSeeder extends Seeder
         $sales = Role::firstOrCreate(['name' => 'sale']);
 
         $admin->syncPermissions(Permission::all());
-
-        $stock->syncPermissions($permissions); // Full product & sale access
-
-        $sales->syncPermissions([
-            'sale.create', 'sale.view', 'sale.update', 'sale.delete',
-            'product.view'
-        ]);
 
         // Assign admin role to user ID 1
         $user = User::find(1);

@@ -5,6 +5,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Artisan;
 // For Permissions and Roles
 use App\Models\Product\Product;
 use App\Models\Product\Category;
+use App\Models\Product\Brand;
 
 /*
 |----------------------------------------------------------------------
@@ -98,12 +100,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
+
+    //Products
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index')
         ->middleware('can:viewAny,' . Product::class);
-    
+
+    //Categories
     Route::get('/categories', [CategoryController::class, 'index'])
         ->name('categories.index')->middleware('can:viewAny,' . Category::class);
-        // ->middleware('can:viewAny,' . Product::class);
+
+    //Brands
+    Route::get('/brands', [BrandController::class, 'index'])
+        ->name('brands.index')->middleware('can:viewAny,' . Brand::class);
 });
 require __DIR__.'/auth.php';

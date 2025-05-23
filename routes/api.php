@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Api\AuthController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\UserController;
 // For Permissions and Roles
 use App\Models\Product\Product;
 use App\Models\Product\Category;
+use App\Models\Product\Brand;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,6 +59,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/categories', [CategoryController::class, 'store'])->middleware('can:create,' . Category::class);
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware('can:update,category');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('can:delete,category');
+
+    // Brands
+    Route::get('/brands', [BrandController::class, 'getBrands'])->middleware('can:viewAny,' . Brand::class);
+    Route::get('/brands/{brand}/edit', [BrandController::class, 'edit'])->middleware('can:update,brand');
+    Route::post('/brands', [BrandController::class, 'store'])->middleware('can:create,' . Brand::class);
+    Route::put('/brands/{brand}', [BrandController::class, 'update'])->middleware('can:update,brand');
+    Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->middleware('can:delete,brand');
     
     
     //Product

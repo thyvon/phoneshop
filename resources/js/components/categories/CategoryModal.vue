@@ -157,7 +157,7 @@ const show = async (category = null) => {
   await nextTick()
   showModal.value = true
   await nextTick()
-  initParentSelect2()
+  initParentSelect()
 }
 
 const hideModal = () => {
@@ -212,9 +212,10 @@ const submitForm = async () => {
 }
 
 // --- Select2 Integration ---
-function initParentSelect2() {
+function initParentSelect() {
   if (!parentSelect.value) return
   const $modal = window.$('#categoryModal')
+
   initSelect2(
     parentSelect.value,
     {
@@ -223,15 +224,18 @@ function initParentSelect2() {
       width: '100%',
       dropdownParent: $modal
     },
-    val => {
-      form.value.parent_id = (val === '' || val === null || val === 'null') ? null : Number(val)
+    (value) => {
+      form.value.parent_id = value !== '' && value !== null && value !== 'null'
+        ? Number(value)
+        : null
     }
   )
+
   // Set initial value after options are rendered
   nextTick(() => {
-    // Check if the current parent_id exists in the options
-    const exists = mainCategories.value.some(cat => cat.id == form.value.parent_id)
-    if (exists) {
+    const parentIdExists = mainCategories.value.some((category) => category.id === form.value.parent_id)
+
+    if (parentIdExists) {
       window.$(parentSelect.value).val(form.value.parent_id).trigger('change')
     } else {
       window.$(parentSelect.value).val('').trigger('change')
@@ -241,9 +245,10 @@ function initParentSelect2() {
 }
 
 function destroyParentSelect2() {
-  if (parentSelect.value) {
-    destroySelect2(parentSelect.value)
-    window.$(parentSelect.value).off('change')
+  const parentElement = parentSelect.value;
+  if (parentElement) {
+    destroySelect2(parentElement);
+    window.$(parentElement).off('change');
   }
 }
 
@@ -251,7 +256,7 @@ function destroyParentSelect2() {
 watch(showModal, async (val) => {
   if (val) {
     await nextTick()
-    initParentSelect2()
+    initParentSelect()
   } else {
     destroyParentSelect2()
   }
@@ -273,7 +278,7 @@ watch(() => form.value.sub_taxonomy, (val) => {
 watch(mainCategories, async () => {
   await nextTick()
   destroyParentSelect2()
-  initParentSelect2()
+  initParentSelect()
 })
 
 defineExpose({ show })

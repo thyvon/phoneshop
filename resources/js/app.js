@@ -30,6 +30,7 @@ import Datatable from './components/reusable/Datatable.vue'
 //Products
 import ProductPage from './components/products/ProductPage.vue'
 import CategoryPage from './components/categories/CategoryPage.vue'
+import BrandPage from './components/brands/BrandPage.vue'
 
 //User Management
 import UserPage from './components/users-management/User.vue'
@@ -46,6 +47,7 @@ app.component('datatable', Datatable)
 // Products
 app.component('product-page', ProductPage)
 app.component('category-page', CategoryPage)
+app.component('brand-page', BrandPage)
 
 // User Management
 app.component('user-page', UserPage)

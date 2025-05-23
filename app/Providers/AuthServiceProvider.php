@@ -7,6 +7,8 @@ use App\Models\Product\Product;
 use App\Policies\ProductPolicy;
 use App\Models\Product\Category;
 use App\Policies\CategoryPolicy;
+use App\Models\Product\Brand;
+use App\Policies\BrandPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -19,6 +21,7 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         Product::class => ProductPolicy::class,
         Category::class => CategoryPolicy::class,
+        Brnad::class => BrandPolicy::class,
     ];
 
     /**
