@@ -7,8 +7,11 @@
       <table ref="table" class="table table-bordered w-100 table-sm">
         <thead>
           <tr>
-            <th v-for="(h, i) in headers" :key="i">{{ h.text }}</th>
-            <th v-if="actions.length">Actions</th>
+            <th style="width: 30px; text-align: center;">#</th>
+            <th v-for="(h, i) in headers" :key="i" :style="{ width: h.width }">
+              {{ h.text }}
+            </th>
+            <th v-if="actions.length" style="width: 80px; text-align: center;">Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -124,25 +127,37 @@ const createActionButtons = (row) => {
 
 // DataTable columns config
 const dtColumns = computed(() => {
-  const cols = props.headers.map((h) => ({
-    data: h.value,
-    width: h.width || undefined,
-    render: (val) => renderColumnData(h.value, val),
-    orderable: h.sortable !== false,
-  }));
+  const cols = [
+    {
+      data: null,
+      orderable: false,
+      searchable: false,
+      className: 'text-center',
+      width: '30px',
+      render: (data, type, row, meta) => meta.row + 1 + meta.settings._iDisplayStart,
+    },
+    ...props.headers.map((h) => ({
+      data: h.value,
+      width: h.width || undefined,
+      render: (val, type, row) => renderColumnData(h.value, val),
+      orderable: h.sortable !== false,
+    }))
+  ];
 
   if (props.actions.length) {
     cols.push({
       data: null,
       orderable: false,
+      searchable: false,
       className: 'text-center',
       width: '80px',
-      render: (row) => createActionButtons(row),
+      render: (data, type, row) => createActionButtons(row),
     });
   }
 
   return cols;
 });
+
 
 // Fetch data from server
 const fetchData = async (params) => {
