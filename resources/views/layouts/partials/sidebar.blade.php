@@ -1,4 +1,4 @@
-<aside class="page-sidebar">
+<aside class="page-sidebar mod-skin-dark">
     <div class="page-logo">
         <a href="#" class="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
             <img src="{{asset ('template/img/logo.png') }}" alt="SmartAdmin WebApp" aria-roledescription="logo">
