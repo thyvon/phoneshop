@@ -18,24 +18,24 @@
         <div class="form-group mb-3">
           <label>Permissions</label>
           <div class="row">
-            <div
-              v-for="permission in allPermissions"
-              :key="permission.id"
-              class="col-6"
-            >
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  :id="'perm-' + permission.id"
-                  :value="Number(permission.id)"
-                  v-model="form.permissions"
-                />
-                <label class="form-check-label" :for="'perm-' + permission.id">
-                  {{ permission.name }}
-                </label>
-              </div>
+          <div
+            v-for="(permission, idx) in allPermissions"
+            :key="permission.id"
+            class="col-6"
+          >
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                :id="`perm-${permission.id}-${idx}`"
+                :value="Number(permission.id)"
+                v-model="form.permissions"
+              />
+              <label class="form-check-label" :for="`perm-${permission.id}-${idx}`">
+                {{ permission.name }}
+              </label>
             </div>
+          </div>
           </div>
         </div>
       </form>
@@ -106,7 +106,7 @@ const resetForm = () => {
 
 const loadPermissions = async () => {
   try {
-    const { data } = await axios.get('/api/permissions')
+    const { data } = await axios.get('/api/role-permissions')
     allPermissions.value = data
   } catch (e) {
     allPermissions.value = []

@@ -70,20 +70,24 @@ Route::middleware('auth')->group(function () {
     
     //Product
 
+
+
+    // Users Management
+    Route::get('/users', [UserController::class, 'getUsers']);
+    Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole']);
     // Roles
     Route::get('/roles', [RoleController::class, 'getRoles']);
     Route::get('/roles-name', [RoleController::class, 'getRoleNames']);
+    Route::get('/role-permissions', [RoleController::class, 'getPermissions']);
     Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
     Route::post('/roles', [RoleController::class, 'store']);
     Route::put('/roles/{role}', [RoleController::class, 'update']);
     Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
 
     // Permissions
-    Route::get('/permissions', [RoleController::class, 'getPermissions']);
-    // Or, if you have a dedicated PermissionController:
-    // Route::get('/permissions', [PermissionController::class, 'getPermissions']);
-
-    // Users Management
-    Route::get('/users', [UserController::class, 'getUsers']);
-    Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole']);
+    Route::get('/permissions', [PermissionController::class, 'getPermissions']);
+    Route::get('/permissions/{permission}', [PermissionController::class, 'show']);
+    Route::post('/permissions', [PermissionController::class, 'store']);
+    Route::put('/permissions/{permission}', [PermissionController::class, 'update']);
+    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy']);
 });

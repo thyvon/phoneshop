@@ -7,53 +7,81 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
-    // List all permissions
+    // Web: Blade view shell
     public function index()
     {
-        $permissions = Permission::all();
-        return view('permissions.index', compact('permissions'));
+        return view('permissions.index');
     }
 
-    // Show create form
-    public function create()
+    // API: Get paginated permissions for datatable
+    public function getPermissions(Request $request)
     {
-        return view('permissions.create');
+        $query = Permission::query();
+
+        if ($search = $request->get('search')) {
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('guard_name', 'like', "%{$search}%");
+        }
+
+        $allowedSortColumns = ['name', 'guard_name', 'created_at', 'updated_at'];
+        $sortColumn = $request->get('sortColumn', 'created_at');
+        $sortDirection = $request->get('sortDirection', 'desc');
+
+        if (!in_array($sortColumn, $allowedSortColumns)) {
+            $sortColumn = 'created_at';
+        }
+        if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+            $sortDirection = 'desc';
+        }
+
+        $query->orderBy($sortColumn, $sortDirection);
+        $limit = intval($request->get('limit', 10));
+        $permissions = $query->paginate($limit);
+
+        return response()->json([
+            'data' => $permissions->items(),
+            'recordsTotal' => $permissions->total(),
+            'recordsFiltered' => $permissions->total(),
+            'draw' => intval($request->get('draw', 1)),
+        ]);
     }
 
-    // Store a new permission
+    // API: Get a single permission for editing
+    public function show(Permission $permission)
+    {
+        return response()->json($permission);
+    }
+
+    // API: Store a new permission
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|unique:permissions,name',
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:permissions,name',
+            'guard_name' => 'required|string|max:255',
         ]);
 
-        Permission::create(['name' => $request->name]);
+        $permission = Permission::create($validated);
 
-        return redirect()->route('permissions.index')->with('success', 'Permission created successfully.');
+        return response()->json(['message' => 'Permission created successfully!', 'permission' => $permission]);
     }
 
-    // Show edit form
-    public function edit(Permission $permission)
-    {
-        return view('permissions.edit', compact('permission'));
-    }
-
-    // Update an existing permission
+    // API: Update a permission
     public function update(Request $request, Permission $permission)
     {
-        $request->validate([
-            'name' => 'required|string|unique:permissions,name,' . $permission->id,
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:permissions,name,' . $permission->id,
+            'guard_name' => 'required|string|max:255',
         ]);
 
-        $permission->update(['name' => $request->name]);
+        $permission->update($validated);
 
-        return redirect()->route('permissions.index')->with('success', 'Permission updated successfully.');
+        return response()->json(['message' => 'Permission updated successfully!', 'permission' => $permission]);
     }
 
-    // Delete a permission
+    // API: Delete a permission
     public function destroy(Permission $permission)
     {
         $permission->delete();
-        return redirect()->route('permissions.index')->with('success', 'Permission deleted successfully.');
+        return response()->json(['message' => 'Permission deleted successfully.']);
     }
 }

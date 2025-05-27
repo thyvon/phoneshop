@@ -22,7 +22,6 @@ window.axios = axios
 // Vue Components
 import Example from './components/Example.vue'
 import Dashboard from './components/Dashboard.vue'
-import RolePage from './components/roles/RolePage.vue'
 
 //Reusable Components
 import Datatable from './components/reusable/Datatable.vue'
@@ -34,6 +33,8 @@ import BrandPage from './components/brands/BrandPage.vue'
 
 //User Management
 import UserPage from './components/users-management/User.vue'
+import RolePage from './components/users-management/RolePage.vue'
+import PermissionPage from './components/users-management/PermissionPage.vue'
 
 // Create Vue app instance
 const app = createApp({})
@@ -41,7 +42,6 @@ const app = createApp({})
 // Register global components
 app.component('example', Example)
 app.component('dashboard', Dashboard)
-app.component('role-page', RolePage)
 app.component('datatable', Datatable)
 
 // Products
@@ -51,6 +51,8 @@ app.component('brand-page', BrandPage)
 
 // User Management
 app.component('user-page', UserPage)
+app.component('role-page', RolePage)
+app.component('permission-page', PermissionPage)
 
 // Mount the Vue app
 app.mount('#app')

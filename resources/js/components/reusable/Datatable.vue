@@ -100,6 +100,15 @@ const renderColumnData = (key, val) => {
     const text = val ? 'Yes' : 'No';
     return `<span class="${badgeClass} text-center">${text}</span>`;
   }
+  if (key === 'image' && val) {
+    return `<div class="text-center"><img src="/storage/${val}" alt="Product Image" style="max-width:60px;max-height:60px;" /></div>`;
+  }
+  if (key === 'category' && val) {
+    return val.name ?? '-';
+  }
+  if (key === 'brand' && val) {
+    return val.name ?? '-';
+  }
   return val ?? '';
 };
 
@@ -182,6 +191,36 @@ const initDataTable = () => {
     ...props.options,
     processing: true,
     serverSide: true,
+    dom:
+      "<'row mb-3'<'col-sm-12 col-md-6 d-flex align-items-center justify-content-start'f><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end'B>>" +
+      "<'row'<'col-sm-12'tr>>" +
+      "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+    buttons: [
+      {
+        extend: 'colvis',
+        text: 'Column Visibility',
+        titleAttr: 'Col visibility',
+        className: 'btn-outline-default'
+      },
+      {
+        extend: 'csvHtml5',
+        text: 'CSV',
+        titleAttr: 'Generate CSV',
+        className: 'btn-outline-default'
+      },
+      {
+        extend: 'copyHtml5',
+        text: 'Copy',
+        titleAttr: 'Copy to clipboard',
+        className: 'btn-outline-default'
+      },
+      {
+        extend: 'print',
+        text: 'Print',
+        titleAttr: 'Print Table',
+        className: 'btn-outline-default'
+      }
+    ],
     ajax: async (data, callback) => {
       const { column, dir } = data.order[0] ?? {};
       const sortHeader = props.headers[column];

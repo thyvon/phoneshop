@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -29,7 +30,7 @@ class ProductController extends Controller
     {
         $this->authorize('viewAny', Product::class);
 
-        $query = Product::query();
+        $query = Product::with(['brand', 'category']);
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -78,7 +79,7 @@ class ProductController extends Controller
         'unit_id' => 'required|exists:units,id',
         'manage_stock' => 'boolean',
         'alert_qty' => 'nullable|numeric',
-        'image' => 'nullable|string|max:255',
+        'image' => 'nullable|string|max:255|file',
         'not_sale' => 'boolean',
         'serial_des' => 'boolean',
         'tax' => 'nullable|numeric',
@@ -106,12 +107,12 @@ class ProductController extends Controller
         'variants.*.default_purchase_price' => 'nullable|numeric',
         'variants.*.default_sale_price' => 'nullable|numeric',
         'variants.*.default_margin' => 'nullable|numeric',
-        'variants.*.image' => 'nullable|string|max:255',
+        'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
         'variants.*.variant_value_ids' => 'array',
         'variants.*.variant_value_ids.*' => 'exists:variant_values,id',
         'variants.*.is_active' => 'boolean',
     ];
-}
+    }
 
 
     public function store(Request $request)
@@ -123,6 +124,12 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
+            // Handle main product image upload
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('products', 'public');
+            }
+
             $baseSku = $validated['sku'] ?? $this->generateBaseSku();
 
             $product = Product::create([
@@ -137,7 +144,7 @@ class ProductController extends Controller
                 'unit_id' => $validated['unit_id'] ?? null,
                 'manage_stock' => $validated['manage_stock'] ?? true,
                 'alert_qty' => $validated['alert_qty'] ?? 0,
-                'image' => $validated['image'] ?? null,
+                'image' => $imagePath ?? ($validated['image'] ?? null),
                 'not_sale' => $validated['not_sale'] ?? false,
                 'serial_des' => $validated['serial_des'] ?? false,
                 'tax' => $validated['tax'] ?? 0,
@@ -147,6 +154,12 @@ class ProductController extends Controller
             ]);
 
             foreach ($validated['variants'] as $index => $variant) {
+                // Handle variant image upload
+                $variantImagePath = null;
+                if ($request->hasFile("variants.$index.image")) {
+                    $variantImagePath = $request->file("variants.$index.image")->store('variants', 'public');
+                }
+
                 $variantSku = $variant['sku'] ?? $this->generateVariantSku($baseSku, $index + 1);
                 $createdVariant = $product->variants()->create([
                     'sku' => $variantSku,
@@ -156,7 +169,7 @@ class ProductController extends Controller
                     'default_purchase_price' => $variant['default_purchase_price'] ?? null,
                     'default_sale_price' => $variant['default_sale_price'] ?? null,
                     'default_margin' => $variant['default_margin'] ?? null,
-                    'image' => $variant['image'] ?? null,
+                    'image' => $variantImagePath ?? ($variant['image'] ?? null),
                     'is_active' => array_key_exists('is_active', $variant) ? $variant['is_active'] : true,
                 ]);
                 $createdVariant->values()->attach($variant['variant_value_ids'] ?? []);
@@ -181,27 +194,36 @@ class ProductController extends Controller
         }
     }
 
-    public function edit(Product $product)
-    {
-        $this->authorize('update', $product);
+public function edit(Product $product)
+{
+    $this->authorize('update', $product);
 
-        try {
-            $product->load(['variants.values.attribute']);
-            return response()->json([
-                'product' => $product
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error fetching product for editing', [
-                'error_message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString()
-            ]);
+    try {
+        $product->load(['variants.values.attribute']);
 
-            return response()->json([
-                'message' => 'Failed to fetch product',
-                'error' => $e->getMessage(),
-            ], 500);
+        // Add image URL for product
+        $product->image_url = $product->image ? asset('storage/' . $product->image) : null;
+
+        // Add image URL for each variant
+        foreach ($product->variants as $variant) {
+            $variant->image_url = $variant->image ? asset('storage/' . $variant->image) : null;
         }
+
+        return response()->json([
+            'product' => $product
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error fetching product for editing', [
+            'error_message' => $e->getMessage(),
+            'stack_trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'message' => 'Failed to fetch product',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
 
     public function update(Request $request, Product $product)
     {
@@ -219,6 +241,15 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
+            // Handle main product image upload
+            $imagePath = $product->image;
+            if ($request->hasFile('image')) {
+                if ($product->image) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $imagePath = $request->file('image')->store('products', 'public');
+            }
+
             $product->update([
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
@@ -230,7 +261,7 @@ class ProductController extends Controller
                 'unit_id' => $validated['unit_id'] ?? null,
                 'manage_stock' => $validated['manage_stock'] ?? true,
                 'alert_qty' => $validated['alert_qty'] ?? 0,
-                'image' => $validated['image'] ?? null,
+                'image' => $imagePath,
                 'not_sale' => $validated['not_sale'] ?? false,
                 'serial_des' => $validated['serial_des'] ?? false,
                 'tax' => $validated['tax'] ?? 0,
@@ -242,6 +273,9 @@ class ProductController extends Controller
             // Remove variants not present in the request
             $requestVariantIds = collect($validated['variants'])->pluck('id')->filter()->all();
             $product->variants()->whereNotIn('id', $requestVariantIds)->each(function ($variant) {
+                if ($variant->image) {
+                    Storage::disk('public')->delete($variant->image);
+                }
                 $variant->values()->detach();
                 $variant->delete(); // Soft delete
             });
@@ -249,6 +283,14 @@ class ProductController extends Controller
             foreach ($validated['variants'] as $index => $variantData) {
                 if (!empty($variantData['id'])) {
                     $variant = ProductVariant::findOrFail($variantData['id']);
+                    // Handle variant image upload
+                    $variantImagePath = $variant->image;
+                    if ($request->hasFile("variants.$index.image")) {
+                        if ($variant->image) {
+                            Storage::disk('public')->delete($variant->image);
+                        }
+                        $variantImagePath = $request->file("variants.$index.image")->store('variants', 'public');
+                    }
                     $variant->update([
                         'sku' => $variantData['sku'] ?? $variant->sku,
                         // 'description' => $variantData['description'] ?? $variant->description,
@@ -257,11 +299,15 @@ class ProductController extends Controller
                         'default_purchase_price' => $variantData['default_purchase_price'] ?? $variant->default_purchase_price,
                         'default_sale_price' => $variantData['default_sale_price'] ?? $variant->default_sale_price,
                         'default_margin' => $variantData['default_margin'] ?? $variant->default_margin,
-                        'image' => $variantData['image'] ?? $variant->image,
+                        'image' => $variantImagePath,
                         'is_active' => array_key_exists('is_active', $variantData) ? $variantData['is_active'] : $variant->is_active,
                     ]);
                     $variant->values()->sync($variantData['variant_value_ids'] ?? []);
                 } else {
+                    $variantImagePath = null;
+                    if ($request->hasFile("variants.$index.image")) {
+                        $variantImagePath = $request->file("variants.$index.image")->store('variants', 'public');
+                    }
                     $variantSku = $variantData['sku'] ?? $this->generateVariantSku($product->sku, $index + 1);
                     $newVariant = $product->variants()->create([
                         'sku' => $variantSku,
@@ -271,7 +317,7 @@ class ProductController extends Controller
                         'default_purchase_price' => $variantData['default_purchase_price'] ?? null,
                         'default_sale_price' => $variantData['default_sale_price'] ?? null,
                         'default_margin' => $variantData['default_margin'] ?? null,
-                        'image' => $variantData['image'] ?? null,
+                        'image' => $variantImagePath ?? ($variantData['image'] ?? null),
                         'is_active' => array_key_exists('is_active', $variantData) ? $variantData['is_active'] : true,
                     ]);
                     $newVariant->values()->attach($variantData['variant_value_ids'] ?? []);
@@ -301,9 +347,16 @@ class ProductController extends Controller
             Log::info('Deleting product', ['product_id' => $product->id]);
 
             foreach ($product->variants as $variant) {
+                if ($variant->image) {
+                    Storage::disk('public')->delete($variant->image);
+                }
                 $variant->values()->detach();
                 $variant->delete();
                 Log::info('Deleted variant', ['variant_id' => $variant->id]);
+            }
+
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
             }
 
             $product->delete();

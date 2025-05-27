@@ -15,22 +15,23 @@
     >
       <template #additional-header>
         <button class="btn btn-success" @click="openCreateModal">
-          <i class="fal fa-plus"></i> Create Role
+          <i class="fal fa-plus"></i> Create Permission
         </button>
       </template>
     </datatable>
 
-    <RoleModal ref="roleModal" :isEditing="isEditing" @submitted="reloadDatatable" />
+    <PermissionModal ref="permissionModal" :isEditing="isEditing" @submitted="reloadDatatable" />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
-import RoleModal from '@/components/roles/RoleModal.vue'
+// import PermissionModal from '@/components/permissions/PermissionModal.vue'
+import { confirmAction, showAlert } from '@/utils/bootbox'
 import axios from 'axios'
 
 const datatableRef = ref(null)
-const roleModal = ref(null)
+const permissionModal = ref(null)
 const isEditing = ref(false)
 const pageLength = ref(10)
 
@@ -43,13 +44,13 @@ const datatableParams = reactive({
 })
 
 const datatableHeaders = [
-  { text: 'Name', value: 'name', width: '30%', sortable: true },
+  { text: 'Name', value: 'name', width: '40%', sortable: true },
   { text: 'Guard Name', value: 'guard_name', width: '30%', sortable: true },
-  { text: 'Created At', value: 'created_at', width: '20%', sortable: true },
-  { text: 'Updated At', value: 'updated_at', width: '20%', sortable: true }
+  { text: 'Created At', value: 'created_at', width: '15%', sortable: true },
+  { text: 'Updated At', value: 'updated_at', width: '15%', sortable: true }
 ]
 
-const datatableFetchUrl = '/api/roles'
+const datatableFetchUrl = '/api/permissions'
 const datatableActions = ['edit', 'delete']
 const datatableOptions = {
   responsive: true,
@@ -59,20 +60,20 @@ const datatableOptions = {
 
 const openCreateModal = () => {
   isEditing.value = false
-  roleModal.value?.show({ isEditing: false })
+  permissionModal.value?.show({ isEditing: false })
 }
 
-const openEditModal = async (role) => {
+const openEditModal = async (permission) => {
   isEditing.value = true
-  roleModal.value?.show({ isEditing: true, ...role })
+  permissionModal.value?.show({ isEditing: true, ...permission })
 }
 
 const handleEdit = openEditModal
 
-const handleDelete = async (role) => {
-  if (!confirm(`Delete "${role.name}"?`)) return
+const handleDelete = async (permission) => {
+  if (!confirm(`Delete "${permission.name}"?`)) return
   try {
-    await axios.delete(`/api/roles/${role.id}`)
+    await axios.delete(`/api/permissions/${permission.id}`)
     datatableRef.value?.reload && datatableRef.value.reload()
     alert('Deleted')
   } catch (e) {

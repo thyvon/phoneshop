@@ -69,11 +69,24 @@
             <div class="form-row">
               <div class="form-group col-md-9">
                 <label>Description</label>
-                <textarea v-model="form.description" class="form-control" rows="1"></textarea>
+                <textarea v-model="form.description" class="form-control" rows="6"></textarea>
               </div>
               <div class="form-group col-md-3">
-                <label>Image URL</label>
-                <input v-model="form.image" type="text" class="form-control" />
+                <label>Image</label>
+                <div class="custom-file">
+                  <input
+                    type="file"
+                    class="custom-file-input"
+                    id="productImageInput"
+                    @change="onProductImageChange"
+                  />
+                  <label class="custom-file-label" for="productImageInput">
+                    {{ form.image && typeof form.image === 'string' ? 'Change Image' : 'Choose Image' }}
+                  </label>
+                </div>
+                <div v-if="form.image && typeof form.image === 'string'" class="mt-1">
+                  <img :src="`/storage/${form.image}`" alt="Product Image" style="max-width: 100%; max-height: 80px;" />
+                </div>
               </div>
             </div>
 
@@ -249,7 +262,20 @@
                         <input v-model="variant.default_sale_price" type="number" class="form-control form-control-sm" placeholder="Sale Price" />
                       </td>
                       <td>
-                        <input v-model="variant.image" type="text" class="form-control form-control-sm" placeholder="Image URL" />
+                      <div class="custom-file">
+                        <input
+                          type="file"
+                          class="custom-file-input"
+                          :id="`variantImageInput-${index}`"
+                          @change="onVariantImageChange($event, index)"
+                        />
+                        <label class="custom-file-label" :for="`variantImageInput-${index}`">
+                          {{ variant.image && typeof variant.image === 'string' ? 'Change Image' : 'Choose Image' }}
+                        </label>
+                      </div>
+                      <div v-if="variant.image && typeof variant.image === 'string'" class="mt-1">
+                        <img :src="`/storage/${variant.image}`" alt="Variant Image" style="max-width: 100%; max-height: 40px;" />
+                      </div>
                       </td>
                       <td class="text-center">
                         <div class="custom-control custom-checkbox d-inline-block">
@@ -622,6 +648,20 @@ const generateVariants = () => {
     )
 }
 
+const onProductImageChange = (e) => {
+  const file = e.target.files[0]
+  if (file) {
+    form.value.image = file
+  }
+}
+
+const onVariantImageChange = (e, idx) => {
+  const file = e.target.files[0]
+  if (file) {
+    generatedVariants.value[idx].image = file
+  }
+}
+
 // --- Watchers ---
 watch(() => form.value.has_variants, (newVal) => {
   if (newVal) {
@@ -703,11 +743,42 @@ watch(subCategories, async () => {
 
 // --- End of Watchers ---
 
+// const submitForm = async () => {
+//   if (isSubmitting.value) return
+//   isSubmitting.value = true
+//   try {
+
+//     if (form.value.sub_category_id === '' || form.value.sub_category_id === undefined) {
+//       form.value.sub_category_id = null
+//     }
+//     if (Array.isArray(form.value.sub_category_id)) {
+//       form.value.sub_category_id = form.value.sub_category_id.length ? form.value.sub_category_id[0] : null
+//     }
+
+//     const method = props.isEditing ? 'put' : 'post'
+//     const url = props.isEditing
+//       ? `/api/products/${form.value.id}`
+//       : '/api/products'
+//     const payload = {
+//       ...form.value,
+//       variants: generatedVariants.value
+//     }
+//     await axios[method](url, payload)
+//     emit('submitted')
+//     hideModal()
+//     showAlert('Success', `Product ${props.isEditing ? 'updated' : 'created'} successfully.`, 'success')
+//   } catch (err) {
+//     console.error('Submit error:', err)
+//     showAlert('Error', err.response?.data?.message || 'Failed to save product.', 'danger')
+//   } finally {
+//     isSubmitting.value = false
+//   }
+// }
+
 const submitForm = async () => {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-
     if (form.value.sub_category_id === '' || form.value.sub_category_id === undefined) {
       form.value.sub_category_id = null
     }
@@ -715,18 +786,54 @@ const submitForm = async () => {
       form.value.sub_category_id = form.value.sub_category_id.length ? form.value.sub_category_id[0] : null
     }
 
-    const method = props.isEditing ? 'put' : 'post'
-    const url = props.isEditing
+    const isEdit = props.isEditing
+    const url = isEdit
       ? `/api/products/${form.value.id}`
       : '/api/products'
-    const payload = {
-      ...form.value,
-      variants: generatedVariants.value
+
+    // Use FormData for file upload
+    const formData = new FormData()
+    // Append main product fields
+    Object.entries(form.value).forEach(([key, value]) => {
+      if (key === 'variants') return
+      if (key === 'image' && value instanceof File) {
+        formData.append('image', value)
+      } else if (typeof value === 'boolean') {
+        formData.append(key, value ? 1 : 0)
+      } else if (key !== 'image' && value !== null && value !== undefined) {
+        formData.append(key, value)
+      }
+    })
+
+    // Append variants
+    generatedVariants.value.forEach((variant, idx) => {
+      Object.entries(variant).forEach(([key, value]) => {
+        if (key === 'image' && value instanceof File) {
+          formData.append(`variants[${idx}][image]`, value)
+        } else if (key === 'variant_value_ids' && Array.isArray(value)) {
+          value.forEach((id, i) => {
+            formData.append(`variants[${idx}][variant_value_ids][${i}]`, id)
+          })
+        } else if (typeof value === 'boolean') {
+          formData.append(`variants[${idx}][${key}]`, value ? 1 : 0)
+        } else if (key !== 'image' && value !== null && value !== undefined) {
+          formData.append(`variants[${idx}][${key}]`, value)
+        }
+      })
+    })
+
+    // If editing, spoof PUT method for Laravel
+    if (isEdit) {
+      formData.append('_method', 'PUT')
     }
-    await axios[method](url, payload)
+
+    await axios.post(url, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
     emit('submitted')
     hideModal()
-    showAlert('Success', `Product ${props.isEditing ? 'updated' : 'created'} successfully.`, 'success')
+    showAlert('Success', `Product ${isEdit ? 'updated' : 'created'} successfully.`, 'success')
   } catch (err) {
     console.error('Submit error:', err)
     showAlert('Error', err.response?.data?.message || 'Failed to save product.', 'danger')

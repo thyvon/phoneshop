@@ -18,6 +18,25 @@
           <i class="fal fa-plus"></i> Create Product
         </button>
       </template>
+
+      <template #cell.image="{ row }">
+        <img
+          v-if="row.image"
+          :src="`/storage/${row.image}`"
+          alt="Product Image"
+          style="max-width: 60px; max-height: 60px;"
+        />
+      </template>
+
+      <template #cell.category="{ row }">
+        <span v-if="row.category">{{ row.category.name }}</span>
+        <span v-else>-</span>
+      </template>
+      <template #cell.brand="{ row }">
+        <span v-if="row.brand">{{ row.brand.name }}</span>
+        <span v-else>-</span>
+      </template>
+
     </datatable>
 
     <!-- Product Modal -->
@@ -45,11 +64,13 @@ const datatableParams = reactive({
 })
 
 const datatableHeaders = [
-  { text: 'Name', value: 'name', width: '20%', sortable: true },
-  { text: 'Description', value: 'description', width: '30%', sortable: true },
+  { text: 'Image', value: 'image', width: '10%', sortable: false },
+  { text: 'Name', value: 'name', width: '25%', sortable: true },
+  { text: 'Category', value: 'category', width: '20%', sortable: false }, 
+  { text: 'Brand', value: 'brand', width: '15%', sortable: false },
   { text: 'Has Variants', value: 'has_variants', width: '10%', sortable: false },
-  { text: 'Created', value: 'created_at', width: '20%', sortable: true },
-  { text: 'Updated', value: 'updated_at', width: '20%', sortable: false }
+  { text: 'Created', value: 'created_at', width: '10%', sortable: true },
+  { text: 'Updated', value: 'updated_at', width: '10%', sortable: false }
 ]
 const datatableFetchUrl = '/api/products'
 const datatableActions = ['edit', 'delete']
